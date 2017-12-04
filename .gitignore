@@ -1,3 +1,7 @@
+*.un~
+*.swp
+.DS_Store
+
 # Prerequisites
 *.d
 
