@@ -1,0 +1,2 @@
+
+// HAL_PWR_EnterSLEEPMode(0, PWR_SLEEPENTRY_WFI);
