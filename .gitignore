@@ -1,6 +1,7 @@
 *.un~
 *.swp
 .DS_Store
+Firmware/build
 
 # Prerequisites
 *.d
