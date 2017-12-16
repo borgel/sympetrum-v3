@@ -4,11 +4,14 @@
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_gpio.h"
 #include "stm32f0xx_hal_i2c.h"
+#include "stm32f0xx_hal_tim.h"
 #include "iprintf.h"
 
 #include "led.h"
 #include "board_id.h"
 #include "version.h"
+#include "ir_encode.h"
+#include "ir_decode.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -31,6 +34,26 @@ int main(void)
 
    led_Init();
    HAL_Delay(10);
+
+   //TODO
+   ir_InitDecode();
+   ir_InitEncode();
+
+   ir_DecodeEnable();
+
+   uint16_t rxData;
+   while(1) {
+      HAL_Delay(1000);
+
+      ir_SendRaw(0x318);
+      if(ir_GetDecoded(&rxData, NULL)) {
+         iprintf("Got Packet: 0x%x\n", rxData);
+         rxData = 0;
+      }
+   }
+
+   /*
+   //FIXME rm LED test
    led_ClearDisplay();
 
    int i;
@@ -49,6 +72,7 @@ int main(void)
          HAL_Delay(10);
       }
    }
+   */
 
    return 0;
 }
