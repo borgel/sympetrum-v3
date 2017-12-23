@@ -5,7 +5,7 @@
 ######################################
 # target
 ######################################
-TARGET = tomato-timer
+TARGET = sympetrum-v3
 CPU = STM32F051x8
 
 ######################################
@@ -125,7 +125,7 @@ $(BUILD_DIR):
 	mkdir -p $@		
 
 size:
-	$(NM) build/sympetrum-v2.elf |sort
+	$(NM) build/sympetrum-v3.elf | sort
 
 #######################################
 # clean up
