@@ -1,13 +1,6 @@
+#pragma once
 
-#ifndef __IR_H__
-#define __IR_H__
-
-#ifdef __cplusplus
- extern "C" {
-#else
 #include <stdbool.h>
- #endif
-
 
 void IRInit(void);
 void IRStop();
@@ -21,8 +14,3 @@ void IRStartRx();
 void IRStopRX();
 //int32_t IRGetState();
 
-#ifdef __cplusplus
-}
-#endif
-
-#endif
