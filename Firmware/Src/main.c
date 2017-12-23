@@ -24,21 +24,9 @@ union Interrupts {
    };
 };
 
-int main(void)
-{
-   HAL_Init();
-
-   platformHW_Init();
-
-   iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
-
+static void testSympIR(void) {
    ir_InitDecode();
    ir_InitEncode();
-   led_Init();
-
-   HAL_Delay(10);
-
-   led_SetChannel(3, 130);
 
    ir_DecodeEnable();
 
@@ -51,6 +39,39 @@ int main(void)
          rxData = 0;
       }
    }
+}
+
+static void testDarknetIR(void) {
+   iprintf("Darknet\n");
+
+   IRInit();
+
+   uint8_t buf[] = "Test Str";
+
+   while(1) {
+      IRTxBuff(buf, sizeof(buf));
+
+      if(IRBytesAvailable() > 0) {
+         iprintf("have %d bytes\n", IRBytesAvailable());
+      }
+   }
+}
+
+int main(void)
+{
+   HAL_Init();
+
+   platformHW_Init();
+
+   iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
+
+   led_Init();
+   HAL_Delay(10);
+
+   led_SetChannel(3, 130);
+
+   //testSympIR();
+   testDarknetIR();
 
    return 0;
 }
