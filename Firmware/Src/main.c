@@ -24,6 +24,39 @@ union Interrupts {
    };
 };
 
+static void testSympIR(void) {
+   ir_InitDecode();
+   ir_InitEncode();
+
+   ir_DecodeEnable();
+
+   uint16_t rxData;
+
+   while(1) {
+      ir_SendRaw(0x318);
+      if(ir_GetDecoded(&rxData, NULL)) {
+         iprintf("Got Packet: 0x%x\n", rxData);
+         rxData = 0;
+      }
+   }
+}
+
+static void testDarknetIR(void) {
+   iprintf("Darknet\n");
+
+   IRInit();
+
+   uint8_t buf[] = "Test Str";
+
+   while(1) {
+      IRTxBuff(buf, sizeof(buf));
+
+      if(IRBytesAvailable() > 0) {
+         iprintf("have %d bytes\n", IRBytesAvailable());
+      }
+   }
+}
+
 void led_test(void) {
    //control lines init by platform GPIO ini
 
@@ -84,27 +117,13 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
-   //ir_InitDecode();
-   //ir_InitEncode();
    led_Init();
-
-   led_ClearDisplay();
-
    HAL_Delay(10);
+   
+   //led_test();
 
-   led_test();
-
-   ir_DecodeEnable();
-
-   uint16_t rxData;
-
-   while(1) {
-      ir_SendRaw(0x318);
-      if(ir_GetDecoded(&rxData, NULL)) {
-         iprintf("Got Packet: 0x%x\n", rxData);
-         rxData = 0;
-      }
-   }
+   //testSympIR();
+   testDarknetIR();
 
    return 0;
 }
