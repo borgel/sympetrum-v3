@@ -44,8 +44,8 @@
 #include <stdint.h>
 
 //adapt our macros to darknet lingo
-#define IR_TX_PIN          IR_TX_GPIO_Pin
-#define IR_TX_GPIO_PORT    IR_TX_GPIO_Port
+//#define IR_TX_PIN          IR_TX_GPIO_Pin
+//#define IR_TX_GPIO_PORT    IR_TX_GPIO_Port
 #define IR_RCV_Pin         IR_RX_GPIO_Pin
 #define IR_RCV_GPIO_Port   IR_RX_GPIO_Port
 
@@ -94,7 +94,9 @@ static const IRQn_Type IR_RECV_IRQ = EXTI2_3_IRQn;
 static bool ShouldRX = false;
 
 TIM_HandleTypeDef htim3;
-TIM_HandleTypeDef htim16;
+static TIM_HandleTypeDef htim17;
+
+static void TIM17_Init(void);
 
 static crc_t crc_init(void);
 static crc_t crc_finalize(crc_t crc);
@@ -107,7 +109,6 @@ static crc_t crc_update(crc_t crc, const void *data, size_t data_len);
 //
 void TIM3_Init() {
 
-#if 1
 	TIM_ClockConfigTypeDef sClockSourceConfig;
 
 	__HAL_RCC_TIM3_CLK_ENABLE();
@@ -129,41 +130,66 @@ void TIM3_Init() {
    iprintf("6");
 
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
-#else
-	__HAL_RCC_TIM3_CLK_ENABLE();
-	TIM_ClockConfigTypeDef sClockSourceConfig;
-	TIM_MasterConfigTypeDef sMasterConfig;
-	TIM_OC_InitTypeDef sConfigOC;
 
-	htim3.Instance = TIM3;
-	htim3.Init.Prescaler = 32;
-	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-	htim3.Init.Period = 4096;
-	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-	htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-	if (HAL_TIM_Base_Init(&htim3) != HAL_OK) {
-		Error_Handler();
-	}
-
-	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-	if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK) {
-		Error_Handler();
-	}
-
-	//if (HAL_TIM_PWM_Init(&htim3) != HAL_OK) {
-	//	Error_Handler();
-	//}
-
-	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-	sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-	if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK) {
-		Error_Handler();
-	}
-#endif
+   //FIXME set here? in HAL_MSP?
 	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 
    iprintf("7");
+}
+
+/*
+ * Generated the 38kHz output signal when PWM is enabled
+ */
+static void TIM17_Init(void)
+{
+   TIM_OC_InitTypeDef sConfigOC;
+   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+
+   htim17.Instance = TIM17;
+   htim17.Init.Prescaler = 0;
+   htim17.Init.CounterMode = TIM_COUNTERMODE_UP;
+   htim17.Init.Period = 1333;
+   htim17.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim17.Init.RepetitionCounter = 0;
+   htim17.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_ENABLE;
+   if (HAL_TIM_Base_Init(&htim17) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   if (HAL_TIM_PWM_Init(&htim17) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   sConfigOC.Pulse = 333;
+   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+   if (HAL_TIM_PWM_ConfigChannel(&htim17, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+   sBreakDeadTimeConfig.DeadTime = 0;
+   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_DISABLE;
+   if (HAL_TIMEx_ConfigBreakDeadTime(&htim17, &sBreakDeadTimeConfig) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
 }
 
 // Wait until a specified number of TIM3 clock ticks elapses
@@ -220,12 +246,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 
 void IRInit(void) {
 	// IR Transmit GPIO configuration
-	//GPIO_InitTypeDef GPIO_InitStruct;
+	GPIO_InitTypeDef GPIO_InitStruct;
+
 	//GPIO_InitStruct.Pin = IR_TX_PIN;// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
 	//GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	//GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 	//HAL_GPIO_Init(IR_TX_GPIO_PORT, &GPIO_InitStruct);
 
+   /*
 	GPIO_InitTypeDef GPIO_InitStruct;
 
    GPIO_InitStruct.Pin = IR_TX_GPIO_Pin;
@@ -237,6 +265,7 @@ void IRInit(void) {
 
 	// Turn off IR LED by default
 	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+   */
 
    /*
 	GPIO_InitStruct.Pin = TIM_IR_CARRIER_FREQ_Pin;	// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
@@ -257,6 +286,18 @@ void IRInit(void) {
 	//GPIO_InitStruct.Pull = GPIO_NOPULL;
 	//HAL_GPIO_Init(IR_RCV_GPIO_Port, &GPIO_InitStruct);
 
+   // test GPIOs
+   //A1, 
+   GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_1;
+   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
+   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
+
 	// Receive interrupt
 	HAL_NVIC_SetPriority(IR_RECV_IRQ, 0, 0);
 	HAL_NVIC_EnableIRQ(IR_RECV_IRQ);
@@ -267,48 +308,50 @@ void IRInit(void) {
 
 	// Pulse measuring timer for receive
 	TIM3_Init();
+   TIM17_Init();
    iprintf("8");
-	//start 38KHz timer to flash transmitter
-	if (HAL_OK != HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1)) {
-		//Error_Handler();
-      iprintf("Error! 0\n");
-	}
-   iprintf("9");
-	//if(HAL_OK!=HAL_TIM_OC_Start(&htim16, TIM_CHANNEL_1)) {
-	//	Error_Handler();
-	//}
-
 }
 
 void IRStop() {
 	stopIRPulseTimer();
-	HAL_TIM_OC_Stop(&htim16, TIM_CHANNEL_1);
+   //TODO stop TIM17?
 	HAL_TIM_Base_Stop_IT(&htim3);
-	//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
 	ShouldRX = false;
 }
 
 // Transmit start pulse
 void IRStartStop(void) {
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+   HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(START_TICKS);
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(START_TICKS);
 }
 
 // Transmit a zero
 void IRZero(void) {
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+   HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ZERO_TICKS);
 }
 
 // Transmit a one
 void IROne(void) {
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
+   HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ONE_TICKS);
 }
 
@@ -330,7 +373,8 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 	IRStartStop();
 
 	for (uint8_t byte = 0; byte < len; byte++) {
-      iprintf("byte ");
+      //iprintf("byte ");
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
 		IRTxByte(buff[byte]);
 		crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
 	}

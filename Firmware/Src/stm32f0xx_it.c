@@ -73,14 +73,16 @@ void TIM14_IRQHandler(void) {
 /*
  * Handle the bit clock ISR for sending IR.
  */
+/*
 void TIM16_IRQHandler(void)
 {
    //figure out the next stage of the outgoing signal
    ir_SignalGenerate();
 
-   /* Clear TIM16 update interrupt */
+   //Clear TIM16 update interrupt
    __HAL_TIM_CLEAR_FLAG(&htim16, TIM_FLAG_UPDATE);
 }
+*/
 
 /*
  * Handle the ISR used when decoding incoming IR.

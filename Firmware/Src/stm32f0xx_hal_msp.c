@@ -148,7 +148,8 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       __HAL_RCC_TIM3_CLK_ENABLE();
       __HAL_RCC_GPIOA_CLK_ENABLE();
 
-      GPIO_InitStruct.Pin = GPIO_PIN_6;
+      //A3 for darknet RX
+      GPIO_InitStruct.Pin = GPIO_PIN_3;
       GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
       GPIO_InitStruct.Pull = GPIO_NOPULL;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
