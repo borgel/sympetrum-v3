@@ -1,6 +1,8 @@
 #pragma once
 
 #include <stdbool.h>
+#include <stdint.h>
+#include <stdlib.h>
 
 void IRInit(void);
 void IRStop();

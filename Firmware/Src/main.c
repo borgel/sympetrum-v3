@@ -10,8 +10,10 @@
 #include "led.h"
 #include "board_id.h"
 #include "version.h"
+
 #include "ir_encode.h"
 #include "ir_decode.h"
+#include "ir.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -46,10 +48,16 @@ static void testDarknetIR(void) {
 
    IRInit();
 
+   iprintf("dnet IR init done\n");
+
    uint8_t buf[] = "Test Str";
 
    while(1) {
+      iprintf("TX...");
       IRTxBuff(buf, sizeof(buf));
+      iprintf("done\n");
+
+      HAL_Delay(1000);
 
       if(IRBytesAvailable() > 0) {
          iprintf("have %d bytes\n", IRBytesAvailable());
