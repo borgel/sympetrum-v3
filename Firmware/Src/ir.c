@@ -166,57 +166,6 @@ void TIM3_Init() {
    iprintf("7");
 }
 
-static void TIM16_Init(void)
-{
-   TIM_OC_InitTypeDef sConfigOC;
-   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
-
-   htim16.Instance = TIM16;
-   htim16.Init.Prescaler = 0;
-   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
-   htim16.Init.Period = 42627;
-   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-   htim16.Init.RepetitionCounter = 0;
-   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-   if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
-   {
-      iprintf("Error\r\n");
-      return;
-   }
-
-   if (HAL_TIM_PWM_Init(&htim16) != HAL_OK)
-   {
-      iprintf("Error\r\n");
-      return;
-   }
-
-   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-   sConfigOC.Pulse = 42627;
-   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
-   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
-   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-   if (HAL_TIM_PWM_ConfigChannel(&htim16, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
-   {
-      iprintf("Error\r\n");
-      return;
-   }
-
-   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
-   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
-   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
-   sBreakDeadTimeConfig.DeadTime = 0;
-   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
-   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
-   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_ENABLE;
-   if (HAL_TIMEx_ConfigBreakDeadTime(&htim16, &sBreakDeadTimeConfig) != HAL_OK)
-   {
-      iprintf("Error\r\n");
-      return;
-   }
-}
-
 // Wait until a specified number of TIM3 clock ticks elapses
 void delayTicks(uint32_t ticks) {
 	uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
@@ -320,8 +269,6 @@ void IRInit(void) {
 	TIM3_Init();
    iprintf("8");
 	//start 38KHz timer to flash transmitter
-   //FIXME copied in from my code
-   TIM16_Init();
 	if (HAL_OK != HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1)) {
 		//Error_Handler();
       iprintf("Error! 0\n");
