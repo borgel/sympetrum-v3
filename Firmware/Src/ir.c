@@ -34,10 +34,20 @@
  *
  */
 
-#include "stm32f3xx_hal.h"
 #include "ir.h"
-#include "crc.h"
-#include <tim.h>
+#include "platform_hw.h"
+#include "iprintf.h"
+#include "stm32f0xx_hal.h"
+#include "stm32f0xx_hal_tim.h"
+#include "stm32f0xx_hal_gpio.h"
+#include <stdlib.h>
+#include <stdint.h>
+
+//adapt our macros to darknet lingo
+#define IR_TX_PIN          IR_TX_GPIO_Pin
+#define IR_TX_GPIO_PORT    IR_TX_GPIO_Port
+#define IR_RCV_Pin         IR_RX_GPIO_Pin
+#define IR_RCV_GPIO_Port   IR_RX_GPIO_Port
 
 // Number of TIM3 ticks for mark/space/start pulses
 #define TICK_BASE (400)
@@ -51,6 +61,9 @@
 
 // RX Buffer size
 #define IR_RX_BUFF_SIZE (256)
+
+// type for internal CRC calculations
+typedef uint8_t crc_t;
 
 // States for state machine
 typedef enum {
@@ -75,10 +88,17 @@ static volatile IRMode_t IRMode;
 static volatile uint8_t irRxBuff[IR_RX_BUFF_SIZE];
 static volatile uint32_t irRxBits;
 static volatile crc_t crc;
-static const IRQn_Type IR_RECV_IRQ = EXTI2_TSC_IRQn;
+//FIXME what do I replace this with?
+//static const IRQn_Type IR_RECV_IRQ = EXTI2_TSC_IRQn;
+static const IRQn_Type IR_RECV_IRQ = EXTI2_3_IRQn;
 static bool ShouldRX = false;
 
 TIM_HandleTypeDef htim3;
+TIM_HandleTypeDef htim16;
+
+static crc_t crc_init(void);
+static crc_t crc_finalize(crc_t crc);
+static crc_t crc_update(crc_t crc, const void *data, size_t data_len);
 
 //
 // Configure timer 3 to measure incoming IR pulse widths
@@ -92,6 +112,8 @@ void TIM3_Init() {
 
 	__HAL_RCC_TIM3_CLK_ENABLE();
 
+   iprintf("4");
+
 	htim3.Instance = TIM3;
 	htim3.Init.Prescaler = 32;
 	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -99,8 +121,12 @@ void TIM3_Init() {
 	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	HAL_TIM_Base_Init(&htim3);
 
+   iprintf("5");
+
 	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
 	HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig);
+
+   iprintf("6");
 
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
 #else
@@ -136,11 +162,66 @@ void TIM3_Init() {
 #endif
 	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
+
+   iprintf("7");
+}
+
+static void TIM16_Init(void)
+{
+   TIM_OC_InitTypeDef sConfigOC;
+   TIM_BreakDeadTimeConfigTypeDef sBreakDeadTimeConfig;
+
+   htim16.Instance = TIM16;
+   htim16.Init.Prescaler = 0;
+   htim16.Init.CounterMode = TIM_COUNTERMODE_UP;
+   htim16.Init.Period = 42627;
+   htim16.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim16.Init.RepetitionCounter = 0;
+   htim16.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+   if (HAL_TIM_Base_Init(&htim16) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   if (HAL_TIM_PWM_Init(&htim16) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   sConfigOC.OCMode = TIM_OCMODE_PWM1;
+   sConfigOC.Pulse = 42627;
+   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+   sConfigOC.OCNPolarity = TIM_OCNPOLARITY_HIGH;
+   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
+   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
+   if (HAL_TIM_PWM_ConfigChannel(&htim16, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
+
+   sBreakDeadTimeConfig.OffStateRunMode = TIM_OSSR_DISABLE;
+   sBreakDeadTimeConfig.OffStateIDLEMode = TIM_OSSI_DISABLE;
+   sBreakDeadTimeConfig.LockLevel = TIM_LOCKLEVEL_OFF;
+   sBreakDeadTimeConfig.DeadTime = 0;
+   sBreakDeadTimeConfig.BreakState = TIM_BREAK_DISABLE;
+   sBreakDeadTimeConfig.BreakPolarity = TIM_BREAKPOLARITY_HIGH;
+   sBreakDeadTimeConfig.AutomaticOutput = TIM_AUTOMATICOUTPUT_ENABLE;
+   if (HAL_TIMEx_ConfigBreakDeadTime(&htim16, &sBreakDeadTimeConfig) != HAL_OK)
+   {
+      iprintf("Error\r\n");
+      return;
+   }
 }
 
 // Wait until a specified number of TIM3 clock ticks elapses
 void delayTicks(uint32_t ticks) {
 	uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
+
+   iprintf("Delay %d ticks\n", ticks);
 
 	IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
 
@@ -153,6 +234,8 @@ void delayTicks(uint32_t ticks) {
 	// Clear any pending interrupts and start counting!
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
 	HAL_TIM_Base_Start_IT(&htim3);
+
+   iprintf("about to wait for tim\n");
 
 	// Wait here until the timer overflow interrupt occurs
 	while (IRMode == IR_TX) {
@@ -194,10 +277,19 @@ void IRInit(void) {
 	//GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
 	//HAL_GPIO_Init(IR_TX_GPIO_PORT, &GPIO_InitStruct);
 
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+   GPIO_InitStruct.Pin = IR_TX_GPIO_Pin;
+   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+   GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
+   HAL_GPIO_Init(IR_TX_GPIO_Port, &GPIO_InitStruct);
+
 	// Turn off IR LED by default
 	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
-#define TEST_LED 0
-#if TEST_LED
+
+   /*
 	GPIO_InitStruct.Pin = TIM_IR_CARRIER_FREQ_Pin;	// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -208,7 +300,7 @@ void IRInit(void) {
 		HAL_GPIO_TogglePin(TIM_IR_CARRIER_FREQ_GPIO_Port,TIM_IR_CARRIER_FREQ_Pin);
 		HAL_Delay(25);
 	}
-#endif
+   */
 
 	// IR Receive GPIO configuration
 	//GPIO_InitStruct.Pin = IR_RCV_Pin;
@@ -222,12 +314,19 @@ void IRInit(void) {
 	ShouldRX = false;
 	//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
 
+   iprintf("3");
+
 	// Pulse measuring timer for receive
 	TIM3_Init();
+   iprintf("8");
 	//start 38KHz timer to flash transmitter
+   //FIXME copied in from my code
+   TIM16_Init();
 	if (HAL_OK != HAL_TIM_PWM_Start(&htim16, TIM_CHANNEL_1)) {
-		Error_Handler();
+		//Error_Handler();
+      iprintf("Error! 0\n");
 	}
+   iprintf("9");
 	//if(HAL_OK!=HAL_TIM_OC_Start(&htim16, TIM_CHANNEL_1)) {
 	//	Error_Handler();
 	//}
@@ -279,9 +378,12 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
 	crc = crc_init();
 
+   iprintf("TX start/stop\n");
+
 	IRStartStop();
 
 	for (uint8_t byte = 0; byte < len; byte++) {
+      iprintf("byte ");
 		IRTxByte(buff[byte]);
 		crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
 	}
@@ -289,6 +391,8 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 	crc = crc_finalize(crc);
 
 	IRTxByte(crc);
+
+   iprintf("TX start/stop\n");
 
 	IRStartStop();
 }
@@ -490,4 +594,75 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		IRStateMachine();
 	}
 }
+
+
+// moved here from external file
+/**
+ * \file crc.c
+ * Functions and types for CRC checks.
+ *
+ * Generated on Mon Jul 18 07:07:41 2016,
+ * by pycrc v0.9, https://pycrc.org
+ * using the configuration:
+ *    Width         = 8
+ *    Poly          = 0x07
+ *    Xor_In        = 0x00
+ *    ReflectIn     = False
+ *    Xor_Out       = 0x00
+ *    ReflectOut    = False
+ *    Algorithm     = table-driven
+*****************************************************************************/
+/**
+* Static table used for the table_driven implementation.
+*****************************************************************************/
+static const crc_t crc_table[16] = {
+   0x00, 0x07, 0x0e, 0x09, 0x1c, 0x1b, 0x12, 0x15, 0x38, 0x3f, 0x36, 0x31, 0x24, 0x23, 0x2a, 0x2d
+};
+
+/**
+ * Update the crc value with new data.
+ *
+ * \param crc      The current crc value.
+ * \param data     Pointer to a buffer of \a data_len bytes.
+ * \param data_len Number of bytes in the \a data buffer.
+ * \return         The updated crc value.
+*****************************************************************************/
+static crc_t crc_update(crc_t crc, const void *data, size_t data_len)
+{
+   const unsigned char *d = (const unsigned char *)data;
+   unsigned int tbl_idx;
+
+   while (data_len--) {
+      tbl_idx = (crc >> 4) ^ (*d >> 4);
+      crc = crc_table[tbl_idx & 0x0f] ^ (crc << 4);
+      tbl_idx = (crc >> 4) ^ (*d >> 0);
+      crc = crc_table[tbl_idx & 0x0f] ^ (crc << 4);
+
+      d++;
+   }
+   return crc & 0xff;
+}
+
+
+/**
+ * Calculate the initial crc value.
+ *
+ * \return     The initial crc value.
+*****************************************************************************/
+static crc_t crc_init(void)
+{
+       return 0x00;
+}
+/**
+ * Calculate the final crc value.
+ *
+ * \param crc  The current crc value.
+ * \return     The final crc value.
+*****************************************************************************/
+static crc_t crc_finalize(crc_t crc)
+{
+       return crc ^ 0x00;
+}
+
+
 
