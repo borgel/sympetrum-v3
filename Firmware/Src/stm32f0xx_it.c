@@ -84,12 +84,28 @@ void TIM16_IRQHandler(void)
 }
 */
 
-/*
- * Handle the ISR used when decoding incoming IR.
+/**
+ * @brief This function handles TIM3 global interrupt.
  */
 void TIM3_IRQHandler(void)
 {
-   /* Clear the TIM2 Update pending bit (but doesn't clear the flag)*/
+   /* USER CODE BEGIN TIM3_IRQn 0 */
+
+   /* USER CODE END TIM3_IRQn 0 */
+   HAL_TIM_IRQHandler(&htim3);
+   /* USER CODE BEGIN TIM3_IRQn 1 */
+
+   /* USER CODE END TIM3_IRQn 1 */
+}
+
+//FIXME rm, from symp
+/*
+ * Handle the ISR used when decoding incoming IR.
+ */
+/*
+void TIM3_IRQHandler(void)
+{
+   //Clear the TIM2 Update pending bit (but doesn't clear the flag)
    __HAL_TIM_CLEAR_IT(&htim3, TIM_FLAG_UPDATE);
 
    // track the time between ALL edges of the incoming signal.
@@ -107,10 +123,10 @@ void TIM3_IRQHandler(void)
    //check for IR bit timeout
    else if(__HAL_TIM_GET_FLAG(&htim3, TIM_FLAG_UPDATE))
    {
-      /* Clears the IR_TIM's pending flags*/
+      // Clears the IR_TIM's pending flags
       __HAL_TIM_CLEAR_FLAG(&htim3, TIM_FLAG_UPDATE);
 
       ir_ResetPacket();
    }
 }
-
+*/

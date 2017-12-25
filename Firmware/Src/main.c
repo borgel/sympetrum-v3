@@ -52,6 +52,11 @@ static void testDarknetIR(void) {
 
    uint8_t buf[] = "Test Str";
 
+   iprintf("TX...");
+   IRTxBuff(buf, sizeof(buf));
+   iprintf("done\n");
+
+   /*
    while(1) {
       iprintf("TX...");
       IRTxBuff(buf, sizeof(buf));
@@ -63,6 +68,7 @@ static void testDarknetIR(void) {
          iprintf("have %d bytes\n", IRBytesAvailable());
       }
    }
+   */
 }
 
 void led_test(void) {
