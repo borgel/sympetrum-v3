@@ -148,6 +148,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       __HAL_RCC_TIM3_CLK_ENABLE();
       __HAL_RCC_GPIOA_CLK_ENABLE();
 
+      /*
+
+         //TODO en?
       //A3 for darknet RX
       GPIO_InitStruct.Pin = GPIO_PIN_3;
       GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -155,10 +158,11 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
       GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
       HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+      */
 
       /* Peripheral interrupt init */
-      HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
-      HAL_NVIC_EnableIRQ(TIM3_IRQn);
+      //HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+      //HAL_NVIC_EnableIRQ(TIM3_IRQn);
    }
 
    //Bring up IR Encode Envelope peripherals
@@ -203,7 +207,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
       HAL_GPIO_DeInit(GPIOA, GPIO_PIN_6);
 
       /* Peripheral interrupt DeInit*/
-      HAL_NVIC_DisableIRQ(TIM3_IRQn);
+      //HAL_NVIC_DisableIRQ(TIM3_IRQn);
    }
    else if(htim_base->Instance==TIM16)
    {

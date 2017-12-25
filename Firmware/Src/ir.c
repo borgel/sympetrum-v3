@@ -210,7 +210,7 @@ void delayTicks(uint32_t ticks) {
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
 	HAL_TIM_Base_Start_IT(&htim3);
 
-   iprintf("about to wait for tim\n");
+   //iprintf("about to wait for tim\n");
 
 	// Wait here until the timer overflow interrupt occurs
 	while (IRMode == IR_TX) {
@@ -287,35 +287,40 @@ void IRInit(void) {
 	//HAL_GPIO_Init(IR_RCV_GPIO_Port, &GPIO_InitStruct);
 
    // test GPIOs
-   //A1, 
-   GPIO_InitStruct.Pin = GPIO_PIN_6 | GPIO_PIN_1;
-   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+   //A1, A6
+   GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_6;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-   GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
+   //GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 
 	// Receive interrupt
-	HAL_NVIC_SetPriority(IR_RECV_IRQ, 0, 0);
-	HAL_NVIC_EnableIRQ(IR_RECV_IRQ);
+   // TODO enable?
+	//HAL_NVIC_SetPriority(IR_RECV_IRQ, 0, 0);
+	//HAL_NVIC_EnableIRQ(IR_RECV_IRQ);
 	ShouldRX = false;
 	//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
-
-   iprintf("3");
 
 	// Pulse measuring timer for receive
 	TIM3_Init();
    TIM17_Init();
-   iprintf("8");
+
+   // make sure the TX PWM is stopped
+   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   HAL_Delay(10);
+
+   // force TIM17's output low so it never accidentally idles high after sending
+   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
 }
 
 void IRStop() {
 	stopIRPulseTimer();
    //TODO stop TIM17?
-	HAL_TIM_Base_Stop_IT(&htim3);
+	//HAL_TIM_Base_Stop_IT(&htim3);
 	ShouldRX = false;
 }
 
@@ -368,13 +373,13 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
 	crc = crc_init();
 
-   iprintf("TX start/stop\n");
+   iprintf("TX send start\n");
 
 	IRStartStop();
 
 	for (uint8_t byte = 0; byte < len; byte++) {
       //iprintf("byte ");
-      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_6);
+      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
 		IRTxByte(buff[byte]);
 		crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
 	}
@@ -383,9 +388,9 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 
 	IRTxByte(crc);
 
-   iprintf("TX start/stop\n");
-
 	IRStartStop();
+
+   iprintf("TX send end\n");
 }
 
 // Shift bits into rx buffer
