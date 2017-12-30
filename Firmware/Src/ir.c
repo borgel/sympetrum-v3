@@ -46,8 +46,8 @@
 //adapt our macros to darknet lingo
 //#define IR_TX_PIN          IR_TX_GPIO_Pin
 //#define IR_TX_GPIO_PORT    IR_TX_GPIO_Port
-#define IR_RCV_Pin         IR_RX_GPIO_Pin
-#define IR_RCV_GPIO_Port   IR_RX_GPIO_Port
+//#define IR_RCV_Pin         IR_RX_GPIO_Pin
+//#define IR_RCV_GPIO_Port   IR_RX_GPIO_Port
 
 // Number of TIM3 ticks for mark/space/start pulses
 #define TICK_BASE (400)
@@ -90,7 +90,7 @@ static volatile uint32_t irRxBits;
 static volatile crc_t crc;
 //FIXME what do I replace this with?
 //static const IRQn_Type IR_RECV_IRQ = EXTI2_TSC_IRQn;
-static const IRQn_Type IR_RECV_IRQ = EXTI2_3_IRQn;
+//static const IRQn_Type IR_RECV_IRQ = EXTI2_3_IRQn;
 static bool ShouldRX = false;
 
 TIM_HandleTypeDef htim3;
@@ -196,7 +196,7 @@ static void TIM17_Init(void)
 void delayTicks(uint32_t ticks) {
 	uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
 
-   iprintf("Delay %d ticks\n", ticks);
+   //iprintf("Delay %d ticks\n", ticks);
 
 	IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
 
@@ -233,6 +233,8 @@ void stopIRPulseTimer() {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+   //FIXME rm
+   //iprintf("T");
 	if (htim == &htim3) {
 		stopIRPulseTimer();
 		if (IRMode == IR_RX) {
@@ -281,11 +283,18 @@ void IRInit(void) {
    */
 
 	// IR Receive GPIO configuration
-	//GPIO_InitStruct.Pin = IR_RCV_Pin;
-	//GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
-	//GPIO_InitStruct.Pull = GPIO_NOPULL;
-	//HAL_GPIO_Init(IR_RCV_GPIO_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = IR_RX_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(IR_RX_GPIO_Port, &GPIO_InitStruct);
 
+	// Receive interrupt
+	HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
+	HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
+	ShouldRX = false;
+	//HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
+
+   //FIXME rm when dev done
    // test GPIOs
    //A1, A6
    GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_6;
@@ -298,13 +307,6 @@ void IRInit(void) {
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 
-	// Receive interrupt
-   // TODO enable?
-	//HAL_NVIC_SetPriority(IR_RECV_IRQ, 0, 0);
-	//HAL_NVIC_EnableIRQ(IR_RECV_IRQ);
-	ShouldRX = false;
-	//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
-
 	// Pulse measuring timer for receive
 	TIM3_Init();
    TIM17_Init();
@@ -315,6 +317,9 @@ void IRInit(void) {
 
    // force TIM17's output low so it never accidentally idles high after sending
    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+
+   //FIXME set? it's already set before RX right?
+   //IRState = IR_RX_IDLE;
 }
 
 void IRStop() {
@@ -432,14 +437,14 @@ int32_t IRBytesAvailable() {
 void IRStartRx() {
 	irRxBits = 0;
 	IRState = IR_RX_IDLE;
-	//__HAL_GPIO_EXTI_CLEAR_IT(IR_RCV_Pin);
-	//HAL_NVIC_EnableIRQ(IR_RECV_IRQ);
+	__HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
+	HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
 	ShouldRX = true;
 }
 
 void IRStopRX() {
 	IRState = IR_RX_IDLE;
-	//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
+	HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
 	ShouldRX = false;
 }
 
@@ -484,7 +489,7 @@ uint8_t *IRGetBuff() {
 // Receive GPIO state machine
 void IRStateMachine() {
 	uint32_t count = TIM3->CNT; // Save timer value as soon as possible
-	uint32_t pinState = HAL_GPIO_ReadPin(IR_RCV_GPIO_Port, IR_RCV_Pin);
+	uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_GPIO_Port, IR_RX_Pin);
 
 	// Stop timer to prevent overflow
 	stopIRPulseTimer();
@@ -540,7 +545,7 @@ void IRStateMachine() {
 					IRState = IR_RX_ERR_CRC;
 				}
 
-				//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
+            HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
 				ShouldRX = false;
 			} else if (count > MARK_TICKS) {
 				startIRPulseTimer(); // Start timing space
@@ -579,14 +584,15 @@ void IRStateMachine() {
 
 	// Disable interrupts if an error occurred (until user resets it)
 	if (IRState < 0) {
-		//HAL_NVIC_DisableIRQ(IR_RECV_IRQ);
+      HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
 		ShouldRX = false;
 	}
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	// Call IR state machine whenever IR_UART2_RX_Pin changes state
-	if ((GPIO_Pin & IR_RCV_Pin) && ShouldRX) {
+	if ((GPIO_Pin == IR_RX_Pin) && ShouldRX) {
+      iprintf("M");
 		IRStateMachine();
 	}
 }

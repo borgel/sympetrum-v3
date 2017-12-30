@@ -83,19 +83,22 @@ void TIM16_IRQHandler(void)
    __HAL_TIM_CLEAR_FLAG(&htim16, TIM_FLAG_UPDATE);
 }
 */
+// Handle events on pins 0-1
+void EXTI2_3_IRQHandler(void) {
+   if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_2)) {
+      HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);
+   }
+   if(__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_3)) {
+      HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);
+   }
+}
 
 /**
  * @brief This function handles TIM3 global interrupt.
  */
 void TIM3_IRQHandler(void)
 {
-   /* USER CODE BEGIN TIM3_IRQn 0 */
-
-   /* USER CODE END TIM3_IRQn 0 */
    HAL_TIM_IRQHandler(&htim3);
-   /* USER CODE BEGIN TIM3_IRQn 1 */
-
-   /* USER CODE END TIM3_IRQn 1 */
 }
 
 //FIXME rm, from symp
