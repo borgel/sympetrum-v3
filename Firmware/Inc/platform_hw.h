@@ -20,7 +20,7 @@
 //#define IR_TX_GPIO_Pin        GPIO_PIN_1
 //#define IR_TX_GPIO_Port       GPIOA
 //darknet IR rx pin
-#define IR_RX_GPIO_Pin        GPIO_PIN_3
+#define IR_RX_Pin             GPIO_PIN_3
 #define IR_RX_GPIO_Port       GPIOA
 
 bool platformHW_Init(void);

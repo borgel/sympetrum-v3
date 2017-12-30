@@ -79,13 +79,16 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
+   testDarknetIR();
+
+   return 0;
+
    led_Init();
    HAL_Delay(10);
 
    led_SetChannel(3, 130);
 
    //testSympIR();
-   testDarknetIR();
 
    return 0;
 }
