@@ -197,6 +197,7 @@ void delayTicks(uint32_t ticks) {
 	uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
 
    //iprintf("Delay %d ticks\n", ticks);
+   iprintf("d");
 
 	IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
 
@@ -216,6 +217,7 @@ void delayTicks(uint32_t ticks) {
 	while (IRMode == IR_TX) {
 		__WFI();
 	}
+   iprintf(">");
 
 	// Restore auto reload register
 	TIM3->ARR = oldTicks;
@@ -234,13 +236,14 @@ void stopIRPulseTimer() {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
    //FIXME rm
-   //iprintf("T");
+   iprintf("T");
 	if (htim == &htim3) {
 		stopIRPulseTimer();
 		if (IRMode == IR_RX) {
 			// Timed out :(
 			IRState = IR_RX_ERR_TIMEOUT;
 		} else if (IRMode == IR_TX) {
+         iprintf("f");
 			IRMode = IR_RX;
 		}
 	}
@@ -366,7 +369,9 @@ void IROne(void) {
 }
 
 void IRTxByte(uint8_t byte) {
-	for (int8_t bit = 7; bit >= 0; bit--) {
+   iprintf("=");
+	for (int bit = 7; bit >= 0; bit--) {
+      iprintf("+");
 		if ((byte & (0x01 << bit)) == 0x00) {
 			IRZero();
 		} else {
@@ -379,12 +384,17 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 	crc = crc_init();
 
    iprintf("TX send start\n");
+   iprintf("buf at 0x%x is %d long: [", buff, len);
+	for (uint8_t byte = 0; byte < len; byte++) {
+      iprintf("%c", buff[byte]);
+   }
+   iprintf("]\n");
 
 	IRStartStop();
 
 	for (uint8_t byte = 0; byte < len; byte++) {
-      //iprintf("byte ");
-      HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
+      iprintf("byte ");
+      //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
 		IRTxByte(buff[byte]);
 		crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
 	}
