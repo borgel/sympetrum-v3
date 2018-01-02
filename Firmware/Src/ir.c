@@ -600,7 +600,6 @@ void IRStateMachine() {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	// Call IR state machine whenever IR_UART2_RX_Pin changes state
 	if ((GPIO_Pin == IR_RX_Pin) && ShouldRX) {
-      iprintf("M");
 		IRStateMachine();
 	}
 }
