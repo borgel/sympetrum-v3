@@ -53,7 +53,7 @@ static void testDarknetIR(void) {
    uint8_t buf[] = "Test Str";
 
    iprintf("TX...");
-   IRTxBuff(buf, sizeof(buf));
+   IRTxBuff(buf, sizeof(buf) - 1);
    iprintf("done\n");
 
    /*
