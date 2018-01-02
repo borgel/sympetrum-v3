@@ -80,6 +80,7 @@ int main(void)
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
    testDarknetIR();
+   __WFI();
 
    return 0;
 

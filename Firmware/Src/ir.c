@@ -196,9 +196,6 @@ static void TIM17_Init(void)
 void delayTicks(uint32_t ticks) {
 	uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
 
-   //iprintf("Delay %d ticks\n", ticks);
-   iprintf("d");
-
 	IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
 
 	// Make sure the timer isn't running anymore
@@ -217,7 +214,6 @@ void delayTicks(uint32_t ticks) {
 	while (IRMode == IR_TX) {
 		__WFI();
 	}
-   iprintf(">");
 
 	// Restore auto reload register
 	TIM3->ARR = oldTicks;
@@ -235,15 +231,12 @@ void stopIRPulseTimer() {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-   //FIXME rm
-   iprintf("T");
 	if (htim == &htim3) {
 		stopIRPulseTimer();
 		if (IRMode == IR_RX) {
 			// Timed out :(
 			IRState = IR_RX_ERR_TIMEOUT;
 		} else if (IRMode == IR_TX) {
-         iprintf("f");
 			IRMode = IR_RX;
 		}
 	}
@@ -334,44 +327,45 @@ void IRStop() {
 
 // Transmit start pulse
 void IRStartStop(void) {
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(START_TICKS);
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(START_TICKS);
 }
 
 // Transmit a zero
 void IRZero(void) {
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ZERO_TICKS);
 }
 
 // Transmit a one
 void IROne(void) {
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
-	//HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
+
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   //FIXME rm
 	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ONE_TICKS);
 }
 
 void IRTxByte(uint8_t byte) {
-   iprintf("=");
 	for (int bit = 7; bit >= 0; bit--) {
-      iprintf("+");
 		if ((byte & (0x01 << bit)) == 0x00) {
 			IRZero();
 		} else {
@@ -383,6 +377,7 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
 	crc = crc_init();
 
+   //FIXME rm
    iprintf("TX send start\n");
    iprintf("buf at 0x%x is %d long: [", buff, len);
 	for (uint8_t byte = 0; byte < len; byte++) {
@@ -393,8 +388,6 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 	IRStartStop();
 
 	for (uint8_t byte = 0; byte < len; byte++) {
-      iprintf("byte ");
-      //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_1);
 		IRTxByte(buff[byte]);
 		crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
 	}
@@ -404,8 +397,6 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 	IRTxByte(crc);
 
 	IRStartStop();
-
-   iprintf("TX send end\n");
 }
 
 // Shift bits into rx buffer
