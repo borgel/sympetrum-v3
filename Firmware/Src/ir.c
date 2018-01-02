@@ -83,6 +83,7 @@ typedef enum {
 	IR_RX = 0, IR_TX
 } IRMode_t;
 
+static bool isInit = false;
 static volatile IRState_t IRState;
 static volatile IRMode_t IRMode;
 static volatile uint8_t irRxBuff[IR_RX_BUFF_SIZE];
@@ -246,6 +247,10 @@ void IRInit(void) {
 	// IR Transmit GPIO configuration
 	GPIO_InitTypeDef GPIO_InitStruct;
 
+   if(isInit) {
+      return;
+   }
+
 	//GPIO_InitStruct.Pin = IR_TX_PIN;// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
 	//GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	//GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -316,6 +321,8 @@ void IRInit(void) {
 
    //FIXME set? it's already set before RX right?
    //IRState = IR_RX_IDLE;
+
+   isInit = true;
 }
 
 void IRStop() {
