@@ -27,47 +27,26 @@ union Interrupts {
 void led_test(void) {
    //control lines init by platform GPIO ini
 
+   /*
    int i;
    for(i = 0; i < 36; i++) {
       iprintf("set %d\n", i);
       led_SetChannel(i, 30);
       //HAL_Delay(100);
    }
+   */
 
    iprintf("Matrix Scan...\n");
 
-   //FIXME move
-   //easy way to reference each matrix column
-   //uint16_t matrixLUT[] = {GPIO_PIN_8, GPIO_PIN_11, GPIO_PIN_12, GPIO_PIN_15};
-   uint16_t matrixLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
-   GPIO_TypeDef * matrixLUTPort[] = {GPIOA, GPIOB, GPIOB, GPIOB};
+   led_DrawPixel(5, 2, COLOR_HSV_WHITE);
+   led_DrawPixel(10, 0, COLOR_HSV_WHITE);
 
-   // the 2d array to display
-   uint8_t rawMatrix[4][36] = {0};
-
-   int col;
    while(true)
    {
-      //TODO permute pattern
+      //TODO permute pattern in memory
 
-      //iprintf("top of scan cycle\n");
-      for(i = 0; i < 4; i++) {
-         //TODO start DMA this col now, becore the other code runs?
-
-         //clear everything
-         for(col = 0; col < 4; col++) {
-            HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_SET);
-         }
-
-         //TODO write new data to controller for this col while everything is off
-
-         //enable the col to show
-         HAL_GPIO_WritePin(matrixLUTPort[i], matrixLUT[i], GPIO_PIN_RESET);
-
-         //persis so the human can see it
-         HAL_Delay(1);
-         //HAL_DelayUS(10);
-      }
+      //draw it
+      led_UpdateDisplay();
    }
 }
 
