@@ -90,7 +90,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 
       /**I2C1 GPIO Configuration    
         PB6     ------> I2C1_SCL
-        PB7     ------> I2C1_SDA 
+        PB7     ------> I2C1_SDA
        */
       GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
       GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;

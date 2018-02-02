@@ -24,6 +24,15 @@ union Interrupts {
    };
 };
 
+void led_test(void) {
+   int i;
+   for(i = 0; i < 36; i++) {
+      iprintf("set %d\n", i);
+      led_SetChannel(i, 130);
+      HAL_Delay(100);
+   }
+}
+
 int main(void)
 {
    HAL_Init();
@@ -32,13 +41,13 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
-   ir_InitDecode();
-   ir_InitEncode();
+   //ir_InitDecode();
+   //ir_InitEncode();
    led_Init();
 
    HAL_Delay(10);
 
-   led_SetChannel(3, 130);
+   led_test();
 
    ir_DecodeEnable();
 
