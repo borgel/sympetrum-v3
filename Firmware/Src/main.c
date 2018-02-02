@@ -42,25 +42,31 @@ void led_test(void) {
    uint16_t matrixLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
    GPIO_TypeDef * matrixLUTPort[] = {GPIOA, GPIOB, GPIOB, GPIOB};
 
+   // the 2d array to display
+   uint8_t rawMatrix[4][36] = {0};
+
    int col;
    while(true)
    {
+      //TODO permute pattern
+
       //iprintf("top of scan cycle\n");
       for(i = 0; i < 4; i++) {
-         iprintf("en %d\n", i);
-         //scan all columns. Turn off everything except the one to show
+         //TODO start DMA this col now, becore the other code runs?
+
+         //clear everything
          for(col = 0; col < 4; col++) {
-            iprintf(" %d", col);
-            if(col == i) {
-               //active LOW enables
-               HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_RESET);
-            }
-            else {
-               HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_SET);
-            }
+            HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_SET);
          }
-         iprintf("\n");
-         //HAL_Delay(10);
+
+         //TODO write new data to controller for this col while everything is off
+
+         //enable the col to show
+         HAL_GPIO_WritePin(matrixLUTPort[i], matrixLUT[i], GPIO_PIN_RESET);
+
+         //persis so the human can see it
+         HAL_Delay(1);
+         //HAL_DelayUS(10);
       }
    }
 }
