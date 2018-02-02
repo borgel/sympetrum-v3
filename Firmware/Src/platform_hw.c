@@ -160,7 +160,7 @@ static void MX_I2C1_Init(void)
 
 static void MX_GPIO_Init(void)
 {
-   GPIO_InitTypeDef GPIO_InitStruct;
+   GPIO_InitTypeDef GPIO_InitStruct = {0};
 
    /* GPIO Ports Clock Enable */
    __HAL_RCC_GPIOA_CLK_ENABLE();
@@ -192,6 +192,18 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Pull = GPIO_NOPULL;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(ESP_nRST_GPIO_Port, &GPIO_InitStruct);
+
+   // configure LED matrix control lines
+   GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15;
+   //FIXME pull low, float high?
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   GPIO_InitStruct.Alternate = 0;
+   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+   GPIO_InitStruct.Pin = GPIO_PIN_3 | GPIO_PIN_4 | GPIO_PIN_5;
+   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 }
 
 /**
