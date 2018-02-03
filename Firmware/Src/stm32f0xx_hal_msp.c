@@ -159,7 +159,17 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
       HAL_NVIC_EnableIRQ(TIM3_IRQn);
    }
+   // TIM for drawing the matrix
+   else if(htim_base->Instance==TIM14)
+   {
+      /* Peripheral clock enable */
+      __HAL_RCC_TIM14_CLK_ENABLE();
 
+      /* Peripheral interrupt init */
+      //TODO change priority? lower? higher?
+      HAL_NVIC_SetPriority(TIM14_IRQn, 0, 0);
+      HAL_NVIC_EnableIRQ(TIM14_IRQn);
+   }
    //Bring up IR Encode Envelope peripherals
    else if(htim_base->Instance==TIM16)
    {
@@ -203,6 +213,13 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 
       /* Peripheral interrupt DeInit*/
       HAL_NVIC_DisableIRQ(TIM3_IRQn);
+   }
+   else if(htim_base->Instance==TIM14)
+   {
+      /* Peripheral clock enable */
+      __HAL_RCC_TIM14_CLK_DISABLE();
+
+      HAL_NVIC_DisableIRQ(TIM14_IRQn);
    }
    else if(htim_base->Instance==TIM16)
    {

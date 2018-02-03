@@ -10,8 +10,9 @@
 
 //FIXME move elsewhere
 extern I2C_HandleTypeDef hi2c1;
-// can only write (0b0)
+TIM_HandleTypeDef htim14;
 
+// can only write (0b0)
 #define LED_CONT_ADDR            (0x78)
 
 #define REG_SHUTDOWN             (0x00)
@@ -32,6 +33,7 @@ enum led_Divisor {
 #define MATRIX_COLS              (12)
 #define ROW_BLANKING             (4)
 
+static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdate(void);
 static bool _WriteRow(int rowIndex);
@@ -67,6 +69,9 @@ void led_Init(void){
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
+
+   // start up the frame clock. After this, it will be drawing to the display
+   _ConfigureFrameClock();
 }
 
 void led_ClearDisplay(void) {
@@ -159,4 +164,17 @@ static bool _ForceUpdate(void) {
       return false;
    }
    return true;
+}
+
+static void _ConfigureFrameClock(void) {
+   htim14.Instance = TIM14;
+   htim14.Init.Prescaler = 1000;
+   htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+   htim14.Init.Period = 300;
+   htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim14.Init.RepetitionCounter = 0;
+   //TIM_TimeBaseInit(TIM2, &timerInitStructure);
+   HAL_TIM_Base_Init(&htim14);
+
+   HAL_TIM_Base_Start_IT(&htim14);
 }

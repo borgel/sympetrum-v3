@@ -18,6 +18,7 @@ extern I2C_HandleTypeDef hi2c1;
 
 //TODO find a better way to pass these in
 extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim14;
 extern TIM_HandleTypeDef htim16;
 
 //TODO move these out of this file (into RC5?)?
@@ -51,6 +52,19 @@ void I2C1_IRQHandler(void)
   } else {
     HAL_I2C_EV_IRQHandler(&hi2c1);
   }
+}
+
+/*
+ * Handle matrix draw tick
+ */
+void TIM14_IRQHandler(void) {
+   __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
+
+   //FIXME rm
+   //iprintf("m");
+
+   //FIXME rm
+   HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
 }
 
 /*
