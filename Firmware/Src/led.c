@@ -34,7 +34,6 @@ enum led_Divisor {
 
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdate(void);
-static bool _SetChannelRaw(uint8_t chan, uint8_t intensity);
 static bool _WriteRow(int rowIndex);
 
 // the in-memory version of the entire matrix
@@ -131,32 +130,6 @@ static bool _WriteRow(int rowIndex) {
       iprintf("Stat = 0x%x\n", stat);
       return false;
    }
-   return true;
-}
-
-/*
-bool led_SetChannel(uint8_t chan, uint8_t intensity) {
-   return _SetChannelRaw(chan, intensity);
-}
-*/
-
-static bool _SetChannelRaw(uint8_t chan, uint8_t intensity) {
-   //TODO on intensity 0, disable the channel?
-   HAL_StatusTypeDef stat;
-   uint8_t config[2] = {};
-
-   config[0] = REG_PWM_BASE + chan;
-   config[1] = intensity;
-
-   stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
-   if(stat != 0) {
-      iprintf("Stat = 0x%x\n", stat);
-      return false;
-   }
-
-   //TODO do this more efficiently?
-   _ForceUpdate();
-
    return true;
 }
 
