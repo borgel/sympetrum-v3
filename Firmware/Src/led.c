@@ -125,9 +125,16 @@ void led_UpdateDisplay(void) {
 
 static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
-   uint8_t config[36 + 1] = {REG_PWM_BASE, 0};
+   //TODO macro base size
+   uint8_t config[36 + 1 + 1] = {0};
 
-   //FIXME better way?
+   //set the register
+   config[0] = REG_PWM_BASE;
+   //set the final byte to force the controller to update its outputs
+   config[36 + 1] = 0x0;
+
+   //FIXME better way? somehow expose a buffer to write into??
+   //FIXME macro over memcpy size
    memcpy(&config[1], matrix[rowIndex], 36);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
