@@ -2,14 +2,17 @@
 
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_i2c.h"
+#include "color.h"
 #include "iprintf.h"
 
 #include <stdint.h>
+#include <string.h>
 
 //FIXME move elsewhere
 extern I2C_HandleTypeDef hi2c1;
-// can only write (0b0)
+TIM_HandleTypeDef htim14;
 
+// can only write (0b0)
 #define LED_CONT_ADDR            (0x78)
 
 #define REG_SHUTDOWN             (0x00)
@@ -26,9 +29,51 @@ enum led_Divisor {
    DIVISOR_4      = 0x3,
 };
 
+//channels the controller provides
+#define LED_CHANNELS             (36)
+
+#define MATRIX_ROWS              (4)
+#define MATRIX_COLS              (12)
+#define ROW_BLANKING             (4)
+
+//the number of timer ticks to wait before turning this row off
+#define COUNTS_FOR_PERSISTANCE   (1)
+
+enum DrawState {
+   DS_Start,
+
+   DS_BlankRow,         //optional, enable if needed to reduce ghosting
+   DS_WriteNewRow,
+   DS_EnableRow,
+   DS_PauseForEffect,
+   DS_DisableRow,
+};
+
+struct MatrixState {
+   // the last row that was displayed
+   uint8_t row;
+
+   // number of counts waited for persistance
+   uint16_t waitCounts;
+
+   // state machine state
+   enum DrawState stage;
+};
+static struct MatrixState matrixState = {.row = 0, .stage = DS_Start};
+
+// the in-memory version of the entire matrix, including a fifth row of solid black
+// for blanking.
+// Remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
+static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
+
+// static LUT for controlling matrix row FETs
+static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
+static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
+
+static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
-static bool _ForceUpdate(void);
-static bool _SetChannelRaw(uint8_t chan, uint8_t intensity);
+static bool _ForceUpdateRow(void);
+static bool _WriteRow(int rowIndex);
 
 void led_Init(void){
    HAL_StatusTypeDef stat;
@@ -38,63 +83,156 @@ void led_Init(void){
    data[0] = REG_SHUTDOWN;
    data[1] = 0x1;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
-   iprintf("Stat = 0x%x\n", stat);
+   if(stat != 0) {
+      iprintf("Stat = 0x%x\n", stat);
+   }
 
    // set enable bit and scalar on all channels
-   for(int i = 0; i < 36; i++) {
+   for(int i = 0; i < LED_CHANNELS; i++) {
       _EnableChannel(i, DIVISOR_4);
    }
 
-   _ForceUpdate();
+   _ForceUpdateRow();
 
    // enable all channels
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
+
+   // start up the frame clock. After this, it will be drawing to the display
+   _ConfigureFrameClock();
 }
 
 void led_ClearDisplay(void) {
    //TODO actually disable the channels to save power
-   for(int i = 0; i < 36; i++) {
-      led_SetChannel(i, 0);
+
+   memset(matrix, '\0', sizeof(matrix));
+   _ForceUpdateRow();
+}
+
+// Update the in-memory matrix representation
+void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
+   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+      iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
+      return;
+   }
+
+   color_HSV2RGB(&color, &matrix[y][x]);
+}
+
+// call to complete an entire draw cycle immediately
+void led_ForceRefresh(void) {
+   int i;
+   for(i = 0; i < MATRIX_ROWS; i++) {
+      //blanking is only needed if we aren't always displaying colors. If we are then
+      // ghosting isn't very visible and this just slows things down
+      //_WriteRow(ROW_BLANKING);
+
+      //write new data to controller for this col while everything is off in ONE ARRAY SEND
+      _WriteRow(i);
+
+      //enable the col to show
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
+
+      //persis so the human can see it?
+      HAL_Delay(1);
+
+      // disable this row
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_SET);
    }
 }
 
-bool led_SetChannel(uint8_t chan, uint8_t intensity) {
-   uint8_t mapped;
+/*
+ * This is the main drawing function. The expectation is that someone calls it VERY
+ * FREQUENTLY, otherwise nothing will be displayed! If it's called slowly there may
+ * be flicker. Calling it from a 1kHz timer ISR seems to work well (yes, it's all run
+ * in ISR context, even the i2c).
+ */
+void led_UpdateDisplay(void) {
+   switch(matrixState.stage) {
+      case DS_Start:
+         // any init needed
+         matrixState.row = 0;
+         matrixState.waitCounts = 0;
 
-   /*
-    * we need to remap the logical channels to physical. It turns out that can
-    * be done in a simple (cheesy) way by moving the top half to the bottom, and
-    * the bottom half to the top.
-    * Channel 0 is the top (far from the uUSB port)
-    */
-   if(chan < 18) {
-      mapped = chan + 18;
+         // progress SM
+         //matrixState.stage = DS_BlankRow;
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      case DS_BlankRow:
+         // start i2c to write the blank row
+         _WriteRow(ROW_BLANKING);
+
+         // progress SM
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      case DS_WriteNewRow:
+         // write new data to controller for this col while everything is off in ONE ARRAY SEND
+         _WriteRow(matrixState.row);
+
+         // progress SM
+         matrixState.stage = DS_EnableRow;
+         break;
+
+      case DS_EnableRow:
+         // enable current row
+         HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_RESET);
+
+         // progress SM
+         matrixState.stage = DS_PauseForEffect;
+         break;
+
+      case DS_PauseForEffect:
+         matrixState.waitCounts++;
+         if(matrixState.waitCounts > COUNTS_FOR_PERSISTANCE) {
+            matrixState.waitCounts = 0;
+
+            //progress SM
+            matrixState.stage = DS_DisableRow;
+         }
+
+         break;
+
+      case DS_DisableRow:
+         // disable this row
+         HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_SET);
+
+         //progress to next row
+         matrixState.row++;
+         if(matrixState.row >= MATRIX_ROWS) {
+            matrixState.row = 0;
+         }
+
+         // progress SM
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      default:
+         //should never happen
+         iprintf("Matrix SM default state. Why?\n");
+         break;
    }
-   else {
-      mapped = chan - 18;
-   }
-   return _SetChannelRaw(mapped, intensity);
 }
 
-static bool _SetChannelRaw(uint8_t chan, uint8_t intensity) {
-   //TODO on intensity 0, disable the channel?
+static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
-   uint8_t config[2] = {};
+   uint8_t config[LED_CHANNELS + 1 + 1] = {0};
 
-   config[0] = REG_PWM_BASE + chan;
-   config[1] = intensity;
+   //set the register
+   config[0] = REG_PWM_BASE;
+   //set the final byte to force the controller to update its outputs
+   config[LED_CHANNELS + 1] = 0x0;
 
-   stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
+   //FIXME better way? somehow expose a buffer to write into??
+   memcpy(&config[1], matrix[rowIndex], LED_CHANNELS);
+
+   stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    if(stat != 0) {
       iprintf("Stat = 0x%x\n", stat);
       return false;
    }
-
-   //TODO do this more efficiently?
-   _ForceUpdate();
-
    return true;
 }
 
@@ -107,10 +245,15 @@ static bool _EnableChannel(uint8_t chan, enum led_Divisor div) {
    config[1] = (0x1 << 0) | (div << 1);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
-   iprintf("Stat = 0x%x\n", stat);
-   return (stat == 0);
+   if(stat != 0) {
+      iprintf("Stat = 0x%x\n", stat);
+      return false;
+   }
+   return true;
 }
-static bool _ForceUpdate(void) {
+
+//update the contents of the display with what's in its memory
+static bool _ForceUpdateRow(void) {
    HAL_StatusTypeDef stat;
    uint8_t config[2] = {};
 
@@ -123,3 +266,24 @@ static bool _ForceUpdate(void) {
    }
    return true;
 }
+
+static void _ConfigureFrameClock(void) {
+   htim14.Instance = TIM14;
+   htim14.Init.Prescaler = 100;
+   htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
+   htim14.Init.Period = 241;
+   htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+   htim14.Init.RepetitionCounter = 0;
+   HAL_TIM_Base_Init(&htim14);
+
+   led_MatrixStart();
+}
+
+void led_MatrixStart(void) {
+   HAL_TIM_Base_Start_IT(&htim14);
+}
+
+void led_MatrixStop(void) {
+   HAL_TIM_Base_Stop_IT(&htim14);
+}
+

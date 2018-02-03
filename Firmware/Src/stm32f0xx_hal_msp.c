@@ -90,7 +90,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 
       /**I2C1 GPIO Configuration    
         PB6     ------> I2C1_SCL
-        PB7     ------> I2C1_SDA 
+        PB7     ------> I2C1_SDA
        */
       GPIO_InitStruct.Pin = GPIO_PIN_6|GPIO_PIN_7;
       GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
@@ -159,7 +159,17 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
       HAL_NVIC_EnableIRQ(TIM3_IRQn);
    }
+   // TIM for drawing the matrix
+   else if(htim_base->Instance==TIM14)
+   {
+      /* Peripheral clock enable */
+      __HAL_RCC_TIM14_CLK_ENABLE();
 
+      /* Peripheral interrupt init */
+      //TODO change priority? lower? higher?
+      HAL_NVIC_SetPriority(TIM14_IRQn, 0, 0);
+      HAL_NVIC_EnableIRQ(TIM14_IRQn);
+   }
    //Bring up IR Encode Envelope peripherals
    else if(htim_base->Instance==TIM16)
    {
@@ -203,6 +213,13 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
 
       /* Peripheral interrupt DeInit*/
       HAL_NVIC_DisableIRQ(TIM3_IRQn);
+   }
+   else if(htim_base->Instance==TIM14)
+   {
+      /* Peripheral clock enable */
+      __HAL_RCC_TIM14_CLK_DISABLE();
+
+      HAL_NVIC_DisableIRQ(TIM14_IRQn);
    }
    else if(htim_base->Instance==TIM16)
    {

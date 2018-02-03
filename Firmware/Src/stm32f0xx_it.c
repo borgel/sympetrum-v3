@@ -10,6 +10,7 @@
 #include "platform_hw.h"
 #include "ir_encode.h"
 #include "ir_decode.h"
+#include "led.h"
 
 #include "main.h"
 #include "iprintf.h"
@@ -18,6 +19,7 @@ extern I2C_HandleTypeDef hi2c1;
 
 //TODO find a better way to pass these in
 extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim14;
 extern TIM_HandleTypeDef htim16;
 
 //TODO move these out of this file (into RC5?)?
@@ -51,6 +53,21 @@ void I2C1_IRQHandler(void)
   } else {
     HAL_I2C_EV_IRQHandler(&hi2c1);
   }
+}
+
+/*
+ * Handle matrix draw tick
+ */
+void TIM14_IRQHandler(void) {
+   __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
+
+   //FIXME rm?
+   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+
+   led_UpdateDisplay();
+
+   //FIXME rm
+   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
 }
 
 /*
