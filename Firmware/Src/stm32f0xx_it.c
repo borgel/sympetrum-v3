@@ -48,9 +48,6 @@ void EXTI4_15_IRQHandler(void) {
 */
 void I2C1_IRQHandler(void)
 {
-   //FIXME rm
-   iprintf("i2c");
-
   if (hi2c1.Instance->ISR & (I2C_FLAG_BERR | I2C_FLAG_ARLO | I2C_FLAG_OVR)) {
     HAL_I2C_ER_IRQHandler(&hi2c1);
   } else {
@@ -64,8 +61,7 @@ void I2C1_IRQHandler(void)
 void TIM14_IRQHandler(void) {
    __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
 
-   //FIXME rm
-   //H5L_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+   //FIXME rm?
    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
    led_UpdateDisplay();

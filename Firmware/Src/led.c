@@ -73,7 +73,7 @@ static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
 
 static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
-static bool _ForceUpdate(void);
+static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
 
 void led_Init(void){
@@ -93,7 +93,7 @@ void led_Init(void){
       _EnableChannel(i, DIVISOR_4);
    }
 
-   _ForceUpdate();
+   _ForceUpdateRow();
 
    // enable all channels
    data[0] = REG_GLOBAL_CONTROL;
@@ -108,15 +108,16 @@ void led_ClearDisplay(void) {
    //TODO actually disable the channels to save power
 
    memset(matrix, '\0', sizeof(matrix));
-   _ForceUpdate();
+   _ForceUpdateRow();
 }
 
 // Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
-   //TODO sanity checks!
+   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+      iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
+      return;
+   }
 
-   //void color_HSV2RGB(struct color_ColorHSV const *hsv, struct color_ColorRGB *rgb);
-   //matrix[y][x] = color;
    color_HSV2RGB(&color, &matrix[y][x]);
 }
 
@@ -128,14 +129,6 @@ void led_ForceRefresh(void) {
       //blanking is only needed if we aren't always displaying colors. If we are then
       //ghostingisn't really visible
       //_WriteRow(ROW_BLANKING);
-
-      //disable all the rows
-      //no need to disable all rows if we turn off the one that was displayed before leaving
-      /*
-      for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
-         HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
-      }
-      */
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
@@ -151,9 +144,13 @@ void led_ForceRefresh(void) {
    }
 }
 
+/*
+ * This is the main drawing function. The expectation is that someone calls it VERY
+ * FREQUENTLY, otherwise nothing will be displayed! If it's called slowly there may
+ * be flicker. Calling it from a 1kHz timer ISR seems to work well (yes, it's all run
+ * in ISR context, even the i2c).
+ */
 void led_UpdateDisplay(void) {
-   //TODO refactor into state machine
-
    switch(matrixState.stage) {
       case DS_Start:
          iprintf("matrix SM start\n");
@@ -167,19 +164,15 @@ void led_UpdateDisplay(void) {
          break;
 
       case DS_BlankRow:
-         //TODO, start i2c to write blank row
-         //_WriteRow(ROW_BLANKING);
+         // start i2c to write the blank row
+         _WriteRow(ROW_BLANKING);
 
          // progress SM
          matrixState.stage = DS_WriteNewRow;
          break;
 
       case DS_WriteNewRow:
-         //FIXME rm
-         //iprintf("s1\n");
-
-         //TODO i2c start
-         //write new data to controller for this col while everything is off in ONE ARRAY SEND
+         // write new data to controller for this col while everything is off in ONE ARRAY SEND
          _WriteRow(matrixState.row);
 
          // progress SM
@@ -187,9 +180,6 @@ void led_UpdateDisplay(void) {
          break;
 
       case DS_EnableRow:
-         //FIXME rm
-         //iprintf("s2\n");
-
          // enable current row
          HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_RESET);
 
@@ -198,10 +188,6 @@ void led_UpdateDisplay(void) {
          break;
 
       case DS_PauseForEffect:
-         //FIXME rm
-         //iprintf("s3\n");
-
-         //TODO wait for 1ms?
          matrixState.waitCounts++;
          if(matrixState.waitCounts > COUNTS_FOR_PERSISTANCE) {
             matrixState.waitCounts = 0;
@@ -213,9 +199,6 @@ void led_UpdateDisplay(void) {
          break;
 
       case DS_DisableRow:
-         //FIXME rm
-         //iprintf("s4\n");
-
          // disable this row
          HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_SET);
 
@@ -234,35 +217,6 @@ void led_UpdateDisplay(void) {
          iprintf("Matrix SM default state. Why?\n");
          break;
    }
-
-   /*
-   //iprintf("top of scan cycle\n");
-   //TODO macro size
-   int i, blankRow;
-   for(i = 0; i < MATRIX_ROWS; i++) {
-      //TODO start DMA this col now, before the other code runs?
-
-      //write black
-      //_WriteRow(ROW_BLANKING);
-
-      //disable all the rows
-      //for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
-      // HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
-      //}
-
-      //write new data to controller for this col while everything is off in ONE ARRAY SEND
-      _WriteRow(i);
-
-      //enable the col to show
-      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
-
-      //persis so the human can see it?
-      HAL_Delay(1);
-
-      // disable this row
-      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_SET);
-   }
-   */
 }
 
 static bool _WriteRow(int rowIndex) {
@@ -304,7 +258,7 @@ static bool _EnableChannel(uint8_t chan, enum led_Divisor div) {
 }
 
 //update the contents of the display with what's in its memory
-static bool _ForceUpdate(void) {
+static bool _ForceUpdateRow(void) {
    HAL_StatusTypeDef stat;
    uint8_t config[2] = {};
 
