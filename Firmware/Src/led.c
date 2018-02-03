@@ -320,7 +320,7 @@ static bool _ForceUpdate(void) {
 
 static void _ConfigureFrameClock(void) {
    htim14.Instance = TIM14;
-   htim14.Init.Prescaler = 1000;
+   htim14.Init.Prescaler = 100;
    htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
    htim14.Init.Period = 241;
    htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
