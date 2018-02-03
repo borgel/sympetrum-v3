@@ -64,7 +64,7 @@ void TIM14_IRQHandler(void) {
    //iprintf("m");
 
    //FIXME rm
-   HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_8);
+   HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 }
 
 /*

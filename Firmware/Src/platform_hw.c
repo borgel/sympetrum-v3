@@ -194,7 +194,7 @@ static void MX_GPIO_Init(void)
    HAL_GPIO_Init(ESP_nRST_GPIO_Port, &GPIO_InitStruct);
 
    // configure LED matrix control lines
-   GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_11 | GPIO_PIN_12 | GPIO_PIN_15;
+   GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_8;
    //FIXME pull low, float high?
    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
