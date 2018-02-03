@@ -101,9 +101,11 @@ void led_ForceRefresh(void) {
       //_WriteRow(ROW_BLANKING);
 
       //disable all the rows
+      /*
       for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
          HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
       }
+      */
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
@@ -132,9 +134,12 @@ void led_UpdateDisplay(void) {
       //_WriteRow(ROW_BLANKING);
 
       //disable all the rows
+      //no need to disable all rows if we turn off the one that was displayed before leaving
+      /*
       for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
          HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
       }
+      */
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
