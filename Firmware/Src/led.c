@@ -56,7 +56,9 @@ void led_Init(void){
    data[0] = REG_SHUTDOWN;
    data[1] = 0x1;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
-   iprintf("Stat = 0x%x\n", stat);
+   if(stat != 0) {
+      iprintf("Stat = 0x%x\n", stat);
+   }
 
    // set enable bit and scalar on all channels
    for(int i = 0; i < 36; i++) {
@@ -183,8 +185,11 @@ static bool _EnableChannel(uint8_t chan, enum led_Divisor div) {
    config[1] = (0x1 << 0) | (div << 1);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
-   iprintf("Stat = 0x%x\n", stat);
-   return (stat == 0);
+   if(stat != 0) {
+      iprintf("Stat = 0x%x\n", stat);
+      return false;
+   }
+   return true;
 }
 
 //update the contents of the display with what's in its memory
