@@ -11,8 +11,6 @@
 #include "board_id.h"
 #include "version.h"
 
-#include "ir_encode.h"
-#include "ir_decode.h"
 #include "ir.h"
 
 #include <string.h>
@@ -25,23 +23,6 @@ union Interrupts {
       uint8_t     charger        : 1;
    };
 };
-
-static void testSympIR(void) {
-   ir_InitDecode();
-   ir_InitEncode();
-
-   ir_DecodeEnable();
-
-   uint16_t rxData;
-
-   while(1) {
-      ir_SendRaw(0x318);
-      if(ir_GetDecoded(&rxData, NULL)) {
-         iprintf("Got Packet: 0x%x\n", rxData);
-         rxData = 0;
-      }
-   }
-}
 
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
@@ -165,7 +146,7 @@ int main(void)
 
    led_Init();
    HAL_Delay(10);
-   
+
    //led_test();
 
    //testSympIR();

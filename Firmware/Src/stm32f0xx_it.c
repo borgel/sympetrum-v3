@@ -8,8 +8,6 @@
 #include "stm32f0xx_hal_tim_ex.h"
 
 #include "platform_hw.h"
-#include "ir_encode.h"
-#include "ir_decode.h"
 #include "led.h"
 
 #include "main.h"
@@ -21,10 +19,6 @@ extern I2C_HandleTypeDef hi2c1;
 extern TIM_HandleTypeDef htim3;
 extern TIM_HandleTypeDef htim14;
 extern TIM_HandleTypeDef htim16;
-
-//TODO move these out of this file (into RC5?)?
-static uint32_t ICValue2 = 0;
-static uint8_t pol;
 
 /**
  * @brief This function handles System tick timer.
