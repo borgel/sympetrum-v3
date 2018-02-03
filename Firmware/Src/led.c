@@ -28,18 +28,24 @@ enum led_Divisor {
    DIVISOR_4      = 0x3,
 };
 
+#define MATRIX_ROWS              (4)
+#define MATRIX_COLS              (12)
+#define ROW_BLANKING             (4)
+
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdate(void);
 static bool _SetChannelRaw(uint8_t chan, uint8_t intensity);
 static bool _WriteRow(int rowIndex);
 
 // the in-memory version of the entire matrix
-//TODO macro size
 //remember this is in 3 byte colors
 //5th row is black
-static struct color_ColorRGB matrix[4 + 1][12] = {0};
+static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 
-#define ROW_BLANKING             (4)
+// static LUT for controlling matrix row FETs
+static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
+static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
+
 
 void led_Init(void){
    HAL_StatusTypeDef stat;
@@ -87,36 +93,29 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
 void led_UpdateDisplay(void) {
    //TODO draw the entire matrix
 
-   //TODO const somewhere
-   uint16_t matrixLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
-   GPIO_TypeDef * matrixLUTPort[] = {GPIOA, GPIOB, GPIOB, GPIOB};
-
    //iprintf("top of scan cycle\n");
    //TODO macro size
-   int i, col;
-   for(i = 0; i < 4; i++) {
+   int i, blankRow;
+   for(i = 0; i < MATRIX_ROWS; i++) {
       //TODO start DMA this col now, before the other code runs?
-
-      //iprintf("col %d\n", i);
 
       //write black
       _WriteRow(ROW_BLANKING);
       _ForceUpdate();
-      //HAL_Delay(1);
 
       //disable all the rows
-      for(col = 0; col < 4; col++) {
-         HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_SET);
+      for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
+         HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
       }
 
-      //TODO write new data to controller for this col while everything is off in ONE ARRAY SEND
+      //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
 
       //TODO can we do this in line after the final PWM val?
       _ForceUpdate();
 
       //enable the col to show
-      HAL_GPIO_WritePin(matrixLUTPort[i], matrixLUT[i], GPIO_PIN_RESET);
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
 
       //persis so the human can see it?
       HAL_Delay(1);
