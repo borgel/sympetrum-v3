@@ -12,7 +12,7 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color);
 
 void led_ClearDisplay(void);
 
-//FIXME trigger internally? on timer?
+// Pump frequently to draw the matrix
 void led_UpdateDisplay(void);
 // call to complete an entire draw cycle immediately
 void led_ForceRefresh(void);

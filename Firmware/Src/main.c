@@ -70,7 +70,7 @@ void led_test(void) {
       }
 
       //draw it
-      led_ForceRefresh();
+      //led_ForceRefresh();
 
       count++;
    }

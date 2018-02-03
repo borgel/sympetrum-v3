@@ -33,13 +33,37 @@ enum led_Divisor {
 #define MATRIX_COLS              (12)
 #define ROW_BLANKING             (4)
 
-static void _ConfigureFrameClock(void);
-static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
-static bool _ForceUpdate(void);
-static bool _WriteRow(int rowIndex);
+//TODO adjust to adjust brightness/update frq
+//the number of timer ticks to wait before turning this row off
+#define COUNTS_FOR_PERSISTANCE   (1)
+
+//FIXME move
+enum DrawState {
+   //FIXME needed?
+   DS_Start,
+
+   //TODO blanking state needed?
+   DS_BlankRow,
+   DS_WriteNewRow,
+   DS_EnableRow,
+   DS_PauseForEffect,
+   DS_DisableRow,
+};
+
+struct MatrixState {
+   // the last row that was displayed
+   uint8_t row;
+
+   // number of counts waited for persistance
+   uint16_t waitCounts;
+
+   // state machine state
+   enum DrawState stage;
+};
+static struct MatrixState matrixState = {.row = 0, .stage = DS_Start};
 
 // the in-memory version of the entire matrix
-//remember this is in 3 byte colors
+//remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
 //5th row is black
 static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 
@@ -47,6 +71,10 @@ static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
 static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
 
+static void _ConfigureFrameClock(void);
+static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
+static bool _ForceUpdate(void);
+static bool _WriteRow(int rowIndex);
 
 void led_Init(void){
    HAL_StatusTypeDef stat;
@@ -83,9 +111,8 @@ void led_ClearDisplay(void) {
    _ForceUpdate();
 }
 
+// Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
-   //TODO update the in memory matrix
-   //TODO color conversion
    //TODO sanity checks!
 
    //void color_HSV2RGB(struct color_ColorHSV const *hsv, struct color_ColorRGB *rgb);
@@ -95,7 +122,7 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
 
 // call to complete an entire draw cycle immediately
 void led_ForceRefresh(void) {
-   int i, blankRow;
+   int i;
    for(i = 0; i < MATRIX_ROWS; i++) {
       //write black
       //blanking is only needed if we aren't always displaying colors. If we are then
@@ -103,6 +130,7 @@ void led_ForceRefresh(void) {
       //_WriteRow(ROW_BLANKING);
 
       //disable all the rows
+      //no need to disable all rows if we turn off the one that was displayed before leaving
       /*
       for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
          HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
@@ -126,6 +154,88 @@ void led_ForceRefresh(void) {
 void led_UpdateDisplay(void) {
    //TODO refactor into state machine
 
+   switch(matrixState.stage) {
+      case DS_Start:
+         iprintf("matrix SM start\n");
+
+         // any init needed
+         matrixState.waitCounts = 0;
+
+         // progress SM
+         //matrixState.stage = DS_BlankRow;
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      case DS_BlankRow:
+         //TODO, start i2c to write blank row
+         //_WriteRow(ROW_BLANKING);
+
+         // progress SM
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      case DS_WriteNewRow:
+         //FIXME rm
+         //iprintf("s1\n");
+
+         //TODO i2c start
+         //write new data to controller for this col while everything is off in ONE ARRAY SEND
+         _WriteRow(matrixState.row);
+
+         // progress SM
+         matrixState.stage = DS_EnableRow;
+         break;
+
+      case DS_EnableRow:
+         //FIXME rm
+         //iprintf("s2\n");
+
+         // enable current row
+         HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_RESET);
+
+         // progress SM
+         matrixState.stage = DS_PauseForEffect;
+         break;
+
+      case DS_PauseForEffect:
+         //FIXME rm
+         //iprintf("s3\n");
+
+         //TODO wait for 1ms?
+         matrixState.waitCounts++;
+         if(matrixState.waitCounts > COUNTS_FOR_PERSISTANCE) {
+            matrixState.waitCounts = 0;
+
+            //progress SM
+            matrixState.stage = DS_DisableRow;
+         }
+
+         break;
+
+      case DS_DisableRow:
+         //FIXME rm
+         //iprintf("s4\n");
+
+         // disable this row
+         HAL_GPIO_WritePin(MatrixPortLUT[matrixState.row], MatrixPinLUT[matrixState.row], GPIO_PIN_SET);
+
+         //progress to next row
+         matrixState.row++;
+         if(matrixState.row >= MATRIX_ROWS) {
+            matrixState.row = 0;
+         }
+
+         // progress SM
+         matrixState.stage = DS_WriteNewRow;
+         break;
+
+      default:
+         //should never happen
+         iprintf("Matrix SM default state. Why?\n");
+         break;
+   }
+
+   /*
    //iprintf("top of scan cycle\n");
    //TODO macro size
    int i, blankRow;
@@ -136,12 +246,9 @@ void led_UpdateDisplay(void) {
       //_WriteRow(ROW_BLANKING);
 
       //disable all the rows
-      //no need to disable all rows if we turn off the one that was displayed before leaving
-      /*
-      for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
-         HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
-      }
-      */
+      //for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
+      // HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
+      //}
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
@@ -151,7 +258,11 @@ void led_UpdateDisplay(void) {
 
       //persis so the human can see it?
       HAL_Delay(1);
+
+      // disable this row
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_SET);
    }
+   */
 }
 
 static bool _WriteRow(int rowIndex) {
