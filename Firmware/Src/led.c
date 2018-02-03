@@ -36,7 +36,10 @@ static bool _WriteRow(int rowIndex);
 // the in-memory version of the entire matrix
 //TODO macro size
 //remember this is in 3 byte colors
-static struct color_ColorRGB matrix[4][12] = {0};
+//5th row is black
+static struct color_ColorRGB matrix[4 + 1][12] = {0};
+
+#define ROW_BLANKING             (4)
 
 void led_Init(void){
    HAL_StatusTypeDef stat;
@@ -96,7 +99,12 @@ void led_UpdateDisplay(void) {
 
       //iprintf("col %d\n", i);
 
-      //clear everything
+      //write black
+      _WriteRow(ROW_BLANKING);
+      _ForceUpdate();
+      //HAL_Delay(1);
+
+      //disable all the rows
       for(col = 0; col < 4; col++) {
          HAL_GPIO_WritePin(matrixLUTPort[col], matrixLUT[col], GPIO_PIN_SET);
       }
@@ -110,9 +118,8 @@ void led_UpdateDisplay(void) {
       //enable the col to show
       HAL_GPIO_WritePin(matrixLUTPort[i], matrixLUT[i], GPIO_PIN_RESET);
 
-      //persis so the human can see it
+      //persis so the human can see it?
       HAL_Delay(1);
-      //HAL_DelayUS(10);
    }
 }
 
