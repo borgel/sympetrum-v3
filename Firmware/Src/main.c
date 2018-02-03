@@ -37,46 +37,6 @@ static void testDarknetIR(void) {
    IRTxBuff(buf, sizeof(buf) - 1);
    iprintf("done\n");
    iprintf("have %d bytes\n", IRBytesAvailable());
-
-   /*
-   while(1) {
-      iprintf("TX...");
-      IRTxBuff(buf, sizeof(buf));
-      iprintf("done\n");
-
-      HAL_Delay(1000);
-
-      if(IRBytesAvailable() > 0) {
-         iprintf("have %d bytes\n", IRBytesAvailable());
-      }
-   }
-   */
-}
-
-static void testDarknetRX(void) {
-   iprintf("Darknet RX\n");
-   IRInit();
-
-   IRStartRx();
-
-   int32_t bytes = 0;
-   while(1) {
-      bytes = IRBytesAvailable();
-      if(bytes) {
-         iprintf("have %d bytes\n", bytes);
-         bytes = 0;
-      }
-      if(IRDataReady()) {
-         iprintf("Got Full %d Byte Message! [", bytes);
-
-         iprintf("%s", (char*)IRGetBuff());
-
-         iprintf("]\n");
-
-         IRStopRX();
-         IRStartRx();
-      }
-   }
 }
 
 void led_test(void) {
@@ -139,9 +99,34 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
-   testDarknetIR();
-   testDarknetRX();
+   //testDarknetIR();
 
+   IRInit();
+   IRStartRx();
+
+   while(true) {
+
+      int32_t bytes = 0;
+      while(1) {
+         bytes = IRBytesAvailable();
+         if(bytes) {
+            iprintf("have %d bytes\n", bytes);
+            bytes = 0;
+         }
+         if(IRDataReady()) {
+            iprintf("Got Full %d Byte Message! [", bytes);
+
+            iprintf("%s", (char*)IRGetBuff());
+
+            iprintf("]\n");
+
+            IRStopRX();
+            IRStartRx();
+         }
+      }
+   }
+
+   //FIXME rm
    return 0;
 
    led_Init();
