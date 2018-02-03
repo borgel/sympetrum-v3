@@ -170,7 +170,7 @@ static void _ConfigureFrameClock(void) {
    htim14.Instance = TIM14;
    htim14.Init.Prescaler = 1000;
    htim14.Init.CounterMode = TIM_COUNTERMODE_UP;
-   htim14.Init.Period = 300;
+   htim14.Init.Period = 241;
    htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
    htim14.Init.RepetitionCounter = 0;
    //TIM_TimeBaseInit(TIM2, &timerInitStructure);
