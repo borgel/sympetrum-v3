@@ -14,4 +14,6 @@ void led_ClearDisplay(void);
 
 //FIXME trigger internally? on timer?
 void led_UpdateDisplay(void);
+// call to complete an entire draw cycle immediately
+void led_ForceRefresh(void);
 

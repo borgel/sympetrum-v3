@@ -91,8 +91,36 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
    color_HSV2RGB(&color, &matrix[y][x]);
 }
 
+// call to complete an entire draw cycle immediately
+void led_ForceRefresh(void) {
+   int i, blankRow;
+   for(i = 0; i < MATRIX_ROWS; i++) {
+      //write black
+      //blanking is only needed if we aren't always displaying colors. If we are then
+      //ghostingisn't really visible
+      //_WriteRow(ROW_BLANKING);
+
+      //disable all the rows
+      for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
+         HAL_GPIO_WritePin(MatrixPortLUT[blankRow], MatrixPinLUT[blankRow], GPIO_PIN_SET);
+      }
+
+      //write new data to controller for this col while everything is off in ONE ARRAY SEND
+      _WriteRow(i);
+
+      //enable the col to show
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
+
+      //persis so the human can see it?
+      HAL_Delay(1);
+
+      // disable this row
+      HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_SET);
+   }
+}
+
 void led_UpdateDisplay(void) {
-   //TODO draw the entire matrix
+   //TODO refactor into state machine
 
    //iprintf("top of scan cycle\n");
    //TODO macro size
@@ -111,9 +139,6 @@ void led_UpdateDisplay(void) {
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
-
-      //TODO can we do this in line after the final PWM val?
-      _ForceUpdate();
 
       //enable the col to show
       HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
