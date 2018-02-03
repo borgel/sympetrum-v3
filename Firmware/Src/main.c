@@ -104,25 +104,16 @@ int main(void)
    IRInit();
    IRStartRx();
 
+   uint32_t bytes = 0;
    while(true) {
+      if(IRDataReady()) {
+         iprintf("Got Full Message! ");
 
-      int32_t bytes = 0;
-      while(1) {
-         bytes = IRBytesAvailable();
-         if(bytes) {
-            iprintf("have %d bytes\n", bytes);
-            bytes = 0;
-         }
-         if(IRDataReady()) {
-            iprintf("Got Full %d Byte Message! [", bytes);
+         uint8_t* buf = IRGetBuff(&bytes);
+         iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
 
-            iprintf("%s", (char*)IRGetBuff());
-
-            iprintf("]\n");
-
-            IRStopRX();
-            IRStartRx();
-         }
+         IRStopRX();
+         IRStartRx();
       }
    }
 
