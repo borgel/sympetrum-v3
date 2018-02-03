@@ -490,7 +490,9 @@ bool IRDataReady() {
 }
 
 // Get pointer to data buffer
-uint8_t *IRGetBuff() {
+uint8_t *IRGetBuff(uint32_t * len) {
+	*len = IRBytesAvailable();
+
 	return (uint8_t *) irRxBuff;
 }
 
