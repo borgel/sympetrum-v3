@@ -325,8 +325,16 @@ static void _ConfigureFrameClock(void) {
    htim14.Init.Period = 241;
    htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
    htim14.Init.RepetitionCounter = 0;
-   //TIM_TimeBaseInit(TIM2, &timerInitStructure);
    HAL_TIM_Base_Init(&htim14);
 
+   led_MatrixStart();
+}
+
+void led_MatrixStart(void) {
    HAL_TIM_Base_Start_IT(&htim14);
 }
+
+void led_MatrixStop(void) {
+   HAL_TIM_Base_Stop_IT(&htim14);
+}
+
