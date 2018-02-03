@@ -129,8 +129,7 @@ void led_UpdateDisplay(void) {
       //TODO start DMA this col now, before the other code runs?
 
       //write black
-      _WriteRow(ROW_BLANKING);
-      _ForceUpdate();
+      //_WriteRow(ROW_BLANKING);
 
       //disable all the rows
       for(blankRow = 0; blankRow < MATRIX_ROWS; blankRow++) {
