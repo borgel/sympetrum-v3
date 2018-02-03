@@ -29,21 +29,20 @@ enum led_Divisor {
    DIVISOR_4      = 0x3,
 };
 
+//channels the controller provides
+#define LED_CHANNELS             (36)
+
 #define MATRIX_ROWS              (4)
 #define MATRIX_COLS              (12)
 #define ROW_BLANKING             (4)
 
-//TODO adjust to adjust brightness/update frq
 //the number of timer ticks to wait before turning this row off
 #define COUNTS_FOR_PERSISTANCE   (1)
 
-//FIXME move
 enum DrawState {
-   //FIXME needed?
    DS_Start,
 
-   //TODO blanking state needed?
-   DS_BlankRow,
+   DS_BlankRow,         //optional, enable if needed to reduce ghosting
    DS_WriteNewRow,
    DS_EnableRow,
    DS_PauseForEffect,
@@ -62,9 +61,9 @@ struct MatrixState {
 };
 static struct MatrixState matrixState = {.row = 0, .stage = DS_Start};
 
-// the in-memory version of the entire matrix
-//remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
-//5th row is black
+// the in-memory version of the entire matrix, including a fifth row of solid black
+// for blanking.
+// Remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
 static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 
 // static LUT for controlling matrix row FETs
@@ -89,7 +88,7 @@ void led_Init(void){
    }
 
    // set enable bit and scalar on all channels
-   for(int i = 0; i < 36; i++) {
+   for(int i = 0; i < LED_CHANNELS; i++) {
       _EnableChannel(i, DIVISOR_4);
    }
 
@@ -125,9 +124,8 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
 void led_ForceRefresh(void) {
    int i;
    for(i = 0; i < MATRIX_ROWS; i++) {
-      //write black
       //blanking is only needed if we aren't always displaying colors. If we are then
-      //ghostingisn't really visible
+      // ghosting isn't very visible and this just slows things down
       //_WriteRow(ROW_BLANKING);
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
@@ -153,9 +151,8 @@ void led_ForceRefresh(void) {
 void led_UpdateDisplay(void) {
    switch(matrixState.stage) {
       case DS_Start:
-         iprintf("matrix SM start\n");
-
          // any init needed
+         matrixState.row = 0;
          matrixState.waitCounts = 0;
 
          // progress SM
@@ -221,17 +218,15 @@ void led_UpdateDisplay(void) {
 
 static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
-   //TODO macro base size
-   uint8_t config[36 + 1 + 1] = {0};
+   uint8_t config[LED_CHANNELS + 1 + 1] = {0};
 
    //set the register
    config[0] = REG_PWM_BASE;
    //set the final byte to force the controller to update its outputs
-   config[36 + 1] = 0x0;
+   config[LED_CHANNELS + 1] = 0x0;
 
    //FIXME better way? somehow expose a buffer to write into??
-   //FIXME macro over memcpy size
-   memcpy(&config[1], matrix[rowIndex], 36);
+   memcpy(&config[1], matrix[rowIndex], LED_CHANNELS);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    if(stat != 0) {
