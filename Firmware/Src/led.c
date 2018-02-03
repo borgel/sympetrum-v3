@@ -72,12 +72,9 @@ void led_Init(void){
 
 void led_ClearDisplay(void) {
    //TODO actually disable the channels to save power
-   /*
-   for(int i = 0; i < 36; i++) {
-      led_SetChannel(i, 0);
-   }
-   */
-   //TODO fix this
+
+   memset(matrix, '\0', sizeof(matrix));
+   _ForceUpdate();
 }
 
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
