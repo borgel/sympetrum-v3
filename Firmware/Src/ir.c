@@ -98,6 +98,8 @@ TIM_HandleTypeDef htim3;
 static TIM_HandleTypeDef htim17;
 
 static void TIM17_Init(void);
+static void IRStartRx();
+static void IRStopRX();
 
 static crc_t crc_init(void);
 static crc_t crc_finalize(crc_t crc);
@@ -322,6 +324,9 @@ void IRInit(void) {
    //FIXME set? it's already set before RX right?
    //IRState = IR_RX_IDLE;
 
+   // always listen
+   IRStartRx();
+
    isInit = true;
 }
 
@@ -489,9 +494,13 @@ bool IRDataReady() {
 	}
 }
 
-// Get pointer to data buffer
+// Get pointer to data buffer. This also resets things, so it can only be called ONCE
+// to get this message's data
 uint8_t *IRGetBuff(uint32_t * len) {
 	*len = IRBytesAvailable();
+
+   IRStopRX();
+   IRStartRx();
 
 	return (uint8_t *) irRxBuff;
 }

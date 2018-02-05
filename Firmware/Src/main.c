@@ -102,7 +102,6 @@ int main(void)
    //testDarknetIR();
 
    IRInit();
-   IRStartRx();
 
    uint32_t bytes = 0;
    while(true) {
@@ -111,9 +110,6 @@ int main(void)
 
          uint8_t* buf = IRGetBuff(&bytes);
          iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
-
-         IRStopRX();
-         IRStartRx();
       }
    }
 

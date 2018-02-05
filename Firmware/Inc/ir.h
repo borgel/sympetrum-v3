@@ -13,7 +13,4 @@ int32_t IRRxBlocking(uint32_t timeout_ms);
 int32_t IRBytesAvailable();
 uint8_t *IRGetBuff(uint32_t *len);
 bool IRDataReady();
-void IRStartRx();
-void IRStopRX();
-//int32_t IRGetState();
 
