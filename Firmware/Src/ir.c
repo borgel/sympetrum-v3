@@ -89,9 +89,6 @@ static volatile IRMode_t IRMode;
 static volatile uint8_t irRxBuff[IR_RX_BUFF_SIZE];
 static volatile uint32_t irRxBits;
 static volatile crc_t crc;
-//FIXME what do I replace this with?
-//static const IRQn_Type IR_RECV_IRQ = EXTI2_TSC_IRQn;
-//static const IRQn_Type IR_RECV_IRQ = EXTI2_3_IRQn;
 static bool ShouldRX = false;
 
 TIM_HandleTypeDef htim3;
@@ -116,8 +113,6 @@ void TIM3_Init() {
 
 	__HAL_RCC_TIM3_CLK_ENABLE();
 
-   iprintf("4");
-
 	htim3.Instance = TIM3;
 	htim3.Init.Prescaler = 32;
 	htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
@@ -125,20 +120,14 @@ void TIM3_Init() {
 	htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
 	HAL_TIM_Base_Init(&htim3);
 
-   iprintf("5");
-
 	sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
 	HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig);
-
-   iprintf("6");
 
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
 
    //FIXME set here? in HAL_MSP?
 	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(TIM3_IRQn);
-
-   iprintf("7");
 }
 
 /*
@@ -253,38 +242,6 @@ void IRInit(void) {
       return;
    }
 
-	//GPIO_InitStruct.Pin = IR_TX_PIN;// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
-	//GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	//GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-	//HAL_GPIO_Init(IR_TX_GPIO_PORT, &GPIO_InitStruct);
-
-   /*
-	GPIO_InitTypeDef GPIO_InitStruct;
-
-   GPIO_InitStruct.Pin = IR_TX_GPIO_Pin;
-   GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-   GPIO_InitStruct.Pull = GPIO_NOPULL;
-   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-   GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
-   HAL_GPIO_Init(IR_TX_GPIO_Port, &GPIO_InitStruct);
-
-	// Turn off IR LED by default
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_RESET);
-   */
-
-   /*
-	GPIO_InitStruct.Pin = TIM_IR_CARRIER_FREQ_Pin;	// | TIM_IR_CARRIER_FREQ_Pin;//IR_UART2_TX_Pin;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-	HAL_GPIO_Init(IR_TX_GPIO_PORT, &GPIO_InitStruct);
-	//tranmission happens when tx pin is high and carrier is low
-	HAL_GPIO_WritePin(IR_TX_GPIO_PORT, IR_TX_PIN, GPIO_PIN_SET);
-	for(int i=0;i<1000;i++) {
-		HAL_GPIO_TogglePin(TIM_IR_CARRIER_FREQ_GPIO_Port,TIM_IR_CARRIER_FREQ_Pin);
-		HAL_Delay(25);
-	}
-   */
-
 	// IR Receive GPIO configuration
 	GPIO_InitStruct.Pin = IR_RX_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
@@ -294,21 +251,6 @@ void IRInit(void) {
 	// Receive interrupt
 	HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
 	HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-	ShouldRX = false;
-	//HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
-
-   //FIXME rm when dev done
-   // test GPIOs
-   //A1, A6
-   GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_6;
-	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-   GPIO_InitStruct.Pull = GPIO_NOPULL;
-   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-   //GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
-   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 
 	// Pulse measuring timer for receive
 	TIM3_Init();
@@ -321,9 +263,6 @@ void IRInit(void) {
    // force TIM17's output low so it never accidentally idles high after sending
    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
 
-   //FIXME set? it's already set before RX right?
-   //IRState = IR_RX_IDLE;
-
    // always listen
    IRStartRx();
 
@@ -332,47 +271,33 @@ void IRInit(void) {
 
 void IRStop() {
 	stopIRPulseTimer();
-   //TODO stop TIM17?
-	//HAL_TIM_Base_Stop_IT(&htim3);
 	ShouldRX = false;
 }
 
 // Transmit start pulse
 void IRStartStop(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(START_TICKS);
 
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(START_TICKS);
 }
 
 // Transmit a zero
 void IRZero(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
 
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ZERO_TICKS);
 }
 
 // Transmit a one
 void IROne(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_SET);
 	delayTicks(MARK_TICKS);
 
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
-   //FIXME rm
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_6, GPIO_PIN_RESET);
 	delayTicks(SPACE_ONE_TICKS);
 }
 
