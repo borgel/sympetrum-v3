@@ -99,9 +99,18 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
+   //FIXME en
+   led_Init();
+
    //testDarknetIR();
 
    IRInit();
+
+   //FIXME move
+   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
+   int count = 0;
+   int x, y;
+   uint8_t off = 0;
 
    uint32_t bytes = 0;
    while(true) {
@@ -111,17 +120,19 @@ int main(void)
          uint8_t* buf = IRGetBuff(&bytes);
          iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
       }
+
+      //TOOD led
+      count = 0;
+
+      //permute
+      for(y = 0; y < 4; y++) {
+         for(x = 0; x < 12; x++) {
+            c.h = (x * 5) + (y * 8) + off;
+            led_DrawPixel(x, y, c);
+         }
+      }
+      off++;
    }
-
-   //FIXME rm
-   return 0;
-
-   led_Init();
-   HAL_Delay(10);
-
-   //led_test();
-
-   //testSympIR();
 
    return 0;
 }

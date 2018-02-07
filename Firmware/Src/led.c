@@ -274,6 +274,8 @@ static void _ConfigureFrameClock(void) {
    htim14.Init.Period = 241;
    htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
    htim14.Init.RepetitionCounter = 0;
+   //make sure we disable all output channels (we just want interrupts)
+   htim14.Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
    HAL_TIM_Base_Init(&htim14);
 
    led_MatrixStart();
