@@ -148,6 +148,9 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
    {
       /* Peripheral clock enable */
       __HAL_RCC_TIM3_CLK_ENABLE();
+
+      HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
+      HAL_NVIC_EnableIRQ(TIM3_IRQn);
    }
    // TIM for drawing the matrix
    else if(htim_base->Instance==TIM14)
@@ -188,7 +191,6 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
       HAL_GPIO_Init(IR_TX_Port, &GPIO_InitStruct);
    }
-
 }
 
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
@@ -198,6 +200,8 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
    {
       /* Peripheral clock disable */
       __HAL_RCC_TIM3_CLK_DISABLE();
+
+      HAL_NVIC_DisableIRQ(TIM3_IRQn);
    }
    else if(htim_base->Instance==TIM14)
    {

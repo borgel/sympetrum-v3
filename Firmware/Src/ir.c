@@ -1,10 +1,9 @@
 /*
  * ir.c
  *
- *  Created on: Jul 12, 2016
- *      Author: alvaro
- *
- *      DCDN IR Library
+ *      IR protocol based on DEFCON Darknet IR Library. Theory of operation adapted
+ *      from that. Once place to find a copy of that lib is on their Github:
+ *      https://github.com/thedarknet/defcon25-badge/blob/master/software/firmware/src/badge/ir.cpp
  *
  *      Theory of operation:
  *      The IR tx/rx library encodes data using pulse widths modulated at 38kHz
@@ -24,9 +23,10 @@
  *      0V and a space is 3.3V. This is due to the Vishay TSOP receivers which
  *      have active-low outputs.
  *
- *      TIM2 is used to generate the 38kHz signal on IR_TIM2_CH2_Pin
- *      and is connected to IR_UART2_TX_Pin through an IR LED and resistor.
- *      Turning IR_UART2_TX_Pin to 1 enables transmission while 0 disables it.
+ *      TIM17 Ch1 is used to generate the 38kHz signal on IR_TX_Pin
+ *      and is connected to a pair of IR LEDs and a resistor in series.
+ *      Enabling the TIM17 PWM generates the square wave which is intpreted as a
+ *      "1". Disabling it "sends" a "0".
  *
  *      TIM3 is used as a timer to generate spaces and marks of particular
  *      widths during transmission. During reception, TIM3 is used to measure
@@ -42,12 +42,6 @@
 #include "stm32f0xx_hal_gpio.h"
 #include <stdlib.h>
 #include <stdint.h>
-
-//adapt our macros to darknet lingo
-//#define IR_TX_PIN          IR_TX_GPIO_Pin
-//#define IR_TX_GPIO_PORT    IR_TX_GPIO_Port
-//#define IR_RCV_Pin         IR_RX_GPIO_Pin
-//#define IR_RCV_GPIO_Port   IR_RX_GPIO_Port
 
 // Number of TIM3 ticks for mark/space/start pulses
 #define TICK_BASE (400)
@@ -124,10 +118,6 @@ void TIM3_Init() {
 	HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig);
 
 	__HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
-
-   //FIXME set here? in HAL_MSP?
-	HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
-	HAL_NVIC_EnableIRQ(TIM3_IRQn);
 }
 
 /*
