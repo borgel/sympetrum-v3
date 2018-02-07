@@ -35,10 +35,15 @@ void EXTI0_1_IRQHandler(void) {
 
 // Handle things on pins 4-15
 void EXTI4_15_IRQHandler(void) {
+   if(__HAL_GPIO_EXTI_GET_IT(USER_BUTTON_PIN)) {
+      __HAL_GPIO_EXTI_CLEAR_IT(USER_BUTTON_PIN);
+      iprintf("user\n");
+   }
 }
 
+
 /**
-* @brief This function handles I2C1 event global interrupt / I2C1 wake-up interrupt through EXTI line 23.
+ * @brief This function handles I2C1 event global interrupt / I2C1 wake-up interrupt through EXTI line 23.
 */
 void I2C1_IRQHandler(void)
 {
