@@ -79,6 +79,8 @@ void led_Init(void){
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
+   //HW init in platform_hw and hal_msp
+
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
    data[1] = 0x1;
@@ -274,6 +276,8 @@ static void _ConfigureFrameClock(void) {
    htim14.Init.Period = 241;
    htim14.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
    htim14.Init.RepetitionCounter = 0;
+   //make sure we disable all output channels (we just want interrupts)
+   htim14.Channel = HAL_TIM_ACTIVE_CHANNEL_CLEARED;
    HAL_TIM_Base_Init(&htim14);
 
    led_MatrixStart();

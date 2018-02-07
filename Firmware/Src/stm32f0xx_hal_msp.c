@@ -1,6 +1,8 @@
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
 
+#include "platform_hw.h"
+
 
 void HAL_MspInit(void)
 {
@@ -146,16 +148,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
    {
       /* Peripheral clock enable */
       __HAL_RCC_TIM3_CLK_ENABLE();
-      __HAL_RCC_GPIOA_CLK_ENABLE();
 
-      GPIO_InitStruct.Pin = GPIO_PIN_6;
-      GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-      GPIO_InitStruct.Pull = GPIO_NOPULL;
-      GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
-      GPIO_InitStruct.Alternate = GPIO_AF1_TIM3;
-      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-      /* Peripheral interrupt init */
       HAL_NVIC_SetPriority(TIM3_IRQn, 0, 0);
       HAL_NVIC_EnableIRQ(TIM3_IRQn);
    }
@@ -167,7 +160,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 
       /* Peripheral interrupt init */
       //TODO change priority? lower? higher?
-      HAL_NVIC_SetPriority(TIM14_IRQn, 0, 0);
+      HAL_NVIC_SetPriority(TIM14_IRQn, 1, 0);
       HAL_NVIC_EnableIRQ(TIM14_IRQn);
    }
    //Bring up IR Encode Envelope peripherals
@@ -191,14 +184,13 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
       HAL_NVIC_EnableIRQ(TIM17_IRQn);
 
       __HAL_RCC_GPIOA_CLK_ENABLE();
-      GPIO_InitStruct.Pin = GPIO_PIN_7;
+      GPIO_InitStruct.Pin = IR_TX_Pin;
       GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
       GPIO_InitStruct.Pull = GPIO_NOPULL;
       GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
       GPIO_InitStruct.Alternate = GPIO_AF5_TIM17;
-      HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+      HAL_GPIO_Init(IR_TX_Port, &GPIO_InitStruct);
    }
-
 }
 
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
@@ -209,9 +201,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
       /* Peripheral clock disable */
       __HAL_RCC_TIM3_CLK_DISABLE();
 
-      HAL_GPIO_DeInit(GPIOA, GPIO_PIN_6);
-
-      /* Peripheral interrupt DeInit*/
       HAL_NVIC_DisableIRQ(TIM3_IRQn);
    }
    else if(htim_base->Instance==TIM14)
@@ -232,7 +221,7 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* htim_base)
    else if(htim_base->Instance==TIM17) {
       __HAL_RCC_TIM17_CLK_DISABLE();
 
-      HAL_GPIO_DeInit(GPIOA, GPIO_PIN_7);
+      HAL_GPIO_DeInit(IR_TX_Port, IR_TX_Pin);
 
       HAL_NVIC_DisableIRQ(TIM17_IRQn);
    }

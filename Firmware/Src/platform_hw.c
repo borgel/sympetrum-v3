@@ -166,33 +166,6 @@ static void MX_GPIO_Init(void)
    __HAL_RCC_GPIOA_CLK_ENABLE();
    __HAL_RCC_GPIOB_CLK_ENABLE();
 
-   /*Configure GPIO pin Output Level */
-   HAL_GPIO_WritePin(ESP_nRST_GPIO_Port, ESP_nRST_Pin, GPIO_PIN_RESET);
-
-   /*Configure GPIO pins : nCHG_Pin ACCEL_INT2_Pin ACCEL_INT1_Pin */
-   GPIO_InitStruct.Pin = nCHG_Pin|ACCEL_INT2_Pin|ACCEL_INT1_Pin;
-   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-   GPIO_InitStruct.Pull = GPIO_NOPULL;
-   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
-   // enable EXTI interrupts for all of above
-   // nCHG = 1
-   // INT1 = 12
-   // INT2 = 11
-   // so we need 0-1, and 4-15
-   HAL_NVIC_SetPriority(EXTI0_1_IRQn, 0, 0);
-   HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
-
-   HAL_NVIC_SetPriority(EXTI4_15_IRQn, 0, 0);
-   HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
-
-   /*Configure GPIO pin : ESP_nRST_Pin */
-   GPIO_InitStruct.Pin = ESP_nRST_Pin;
-   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-   GPIO_InitStruct.Pull = GPIO_NOPULL;
-   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-   HAL_GPIO_Init(ESP_nRST_GPIO_Port, &GPIO_InitStruct);
-
    // configure LED matrix control lines
    GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_8;
    //FIXME pull low, float high?

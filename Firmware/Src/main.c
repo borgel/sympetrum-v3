@@ -10,8 +10,8 @@
 #include "led.h"
 #include "board_id.h"
 #include "version.h"
-#include "ir_encode.h"
-#include "ir_decode.h"
+
+#include "ir.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -24,56 +24,19 @@ union Interrupts {
    };
 };
 
-void led_test(void) {
-   //control lines init by platform GPIO ini
+static void testDarknetIR(void) {
+   iprintf("Darknet TX\n");
 
-   /*
-   int i;
-   for(i = 0; i < 36; i++) {
-      iprintf("set %d\n", i);
-      led_SetChannel(i, 30);
-      //HAL_Delay(100);
-   }
-   */
+   IRInit();
 
-   iprintf("Matrix Scan...\n");
+   iprintf("dnet IR init done\n");
 
-   /*
-   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
-   struct color_ColorHSV c2 = {.h = 100, .s = 255, .v = 255};
-   struct color_ColorHSV c3 = {.h = 200, .s = 255, .v = 255};
+   uint8_t buf[] = "Test Str";
 
-   led_DrawPixel(5, 2, c);
-   led_DrawPixel(10, 0, c2);
-   led_DrawPixel(11, 1, c3);
-   */
-
-   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
-   int count = 0;
-   int x, y;
-   uint8_t off = 0;
-   while(true)
-   {
-      //TODO permute pattern in memory
-      //if(count >= 2)
-      {
-         count = 0;
-
-         //permute
-         for(y = 0; y < 4; y++) {
-            for(x = 0; x < 12; x++) {
-               c.h = (x * 5) + (y * 8) + off;
-               led_DrawPixel(x, y, c);
-            }
-         }
-         off++;
-      }
-
-      //draw it
-      //led_ForceRefresh();
-
-      count++;
-   }
+   iprintf("TX...");
+   IRTxBuff(buf, sizeof(buf) - 1);
+   iprintf("done\n");
+   iprintf("have %d bytes\n", IRBytesAvailable());
 }
 
 int main(void)
@@ -84,26 +47,35 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
-   //ir_InitDecode();
-   //ir_InitEncode();
+   //FIXME en
    led_Init();
 
-   led_ClearDisplay();
+   //testDarknetIR();
 
-   HAL_Delay(10);
+   IRInit();
 
-   led_test();
+   //FIXME move
+   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
+   int x, y;
+   uint8_t off = 0;
 
-   ir_DecodeEnable();
+   uint32_t bytes = 0;
+   while(true) {
+      if(IRDataReady()) {
+         iprintf("Got Full Message! ");
 
-   uint16_t rxData;
-
-   while(1) {
-      ir_SendRaw(0x318);
-      if(ir_GetDecoded(&rxData, NULL)) {
-         iprintf("Got Packet: 0x%x\n", rxData);
-         rxData = 0;
+         uint8_t* buf = IRGetBuff(&bytes);
+         iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
       }
+
+      //permute
+      for(y = 0; y < 4; y++) {
+         for(x = 0; x < 12; x++) {
+            c.h = (x * 5) + (y * 8) + off;
+            led_DrawPixel(x, y, c);
+         }
+      }
+      off++;
    }
 
    return 0;
