@@ -55,7 +55,7 @@ void I2C1_IRQHandler(void)
 void TIM14_IRQHandler(void) {
    __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
 
-   //FIXME rm?
+   //FIXME rm? Just toggled to test matrix draw time
    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
 
    led_UpdateDisplay();

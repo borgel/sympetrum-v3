@@ -246,7 +246,7 @@ void IRInit(void) {
 	GPIO_InitStruct.Pin = IR_RX_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(IR_RX_GPIO_Port, &GPIO_InitStruct);
+	HAL_GPIO_Init(IR_RX_Port, &GPIO_InitStruct);
 
 	// Receive interrupt
 	HAL_NVIC_SetPriority(EXTI2_3_IRQn, 0, 0);
@@ -261,7 +261,7 @@ void IRInit(void) {
    HAL_Delay(10);
 
    // force TIM17's output low so it never accidentally idles high after sending
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_7, GPIO_PIN_RESET);
+   HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_RESET);
 
    // always listen
    IRStartRx();
@@ -433,7 +433,7 @@ uint8_t *IRGetBuff(uint32_t * len) {
 // Receive GPIO state machine
 void IRStateMachine() {
 	uint32_t count = TIM3->CNT; // Save timer value as soon as possible
-	uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_GPIO_Port, IR_RX_Pin);
+	uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin);
 
 	// Stop timer to prevent overflow
 	stopIRPulseTimer();

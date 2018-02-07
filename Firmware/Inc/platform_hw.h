@@ -4,12 +4,11 @@
 #include <stdbool.h>
 #include "stm32f0xx_hal.h"
 
-// for darknet
-//#define IR_TX_GPIO_Pin        GPIO_PIN_1
-//#define IR_TX_GPIO_Port       GPIOA
-//darknet IR rx pin
-#define IR_RX_Pin             GPIO_PIN_3
-#define IR_RX_GPIO_Port       GPIOA
+#define IR_TX_Pin       GPIO_PIN_7
+#define IR_TX_Port      GPIOA
+
+#define IR_RX_Pin       GPIO_PIN_3
+#define IR_RX_Port      GPIOA
 
 bool platformHW_Init(void);
 

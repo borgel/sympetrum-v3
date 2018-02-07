@@ -79,6 +79,8 @@ void led_Init(void){
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
+   //HW init in platform_hw and hal_msp
+
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
    data[1] = 0x1;
