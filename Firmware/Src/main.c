@@ -52,19 +52,27 @@ int main(void)
    als_Init();
 
    //FIXME en
-   //led_Init();
+   led_Init();
 
    //testDarknetIR();
 
+   led_SetGlobalBrightness(100);
+
    IRInit();
+
+   //FIXME rm?
+   uint32_t lux;
+   als_GetLux(&lux);
+   led_SetGlobalBrightness(10 + (lux / 10));
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
    int x, y;
    uint8_t off = 0;
 
+   int count = 0;
+
    uint32_t bytes = 0;
-   uint32_t lux;
    while(true) {
       if(IRDataReady()) {
          iprintf("Got Full Message! ");
@@ -83,7 +91,21 @@ int main(void)
       off++;
 
       //FIXME rm
-      als_GetLux(&lux);
+      if(count > 100) {
+         count = 0;
+
+         als_GetLux(&lux);
+         //calculate the brightness to set
+         if(60 + (lux / 10) > 255) {
+            led_SetGlobalBrightness(255);
+         }
+         else {
+            led_SetGlobalBrightness(60 + (lux / 10));
+         }
+
+         iprintf("counts = %d\n", lux);
+      }
+      count++;
    }
 
    return 0;

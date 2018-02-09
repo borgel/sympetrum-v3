@@ -22,24 +22,31 @@ bool als_Init(void) {
    HAL_GPIO_Init(ADC_IN_Port, &GPIO_InitStruct);
 
    // low priority ADC interrupt
-   HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 2, 0);
-   HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
+   //HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 2, 0);
+   //HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 
    return _ADCConfig();
 }
 
 bool als_GetLux(uint32_t * lux) {
+   bool res = false;
+
    //save power by only enabling the ADC when we need it
    HAL_ADC_Start(&adcALS);
 
    if (HAL_ADC_PollForConversion(&adcALS, 1000000) == HAL_OK)
    {
-      iprintf("ADC = %d\n", HAL_ADC_GetValue(&adcALS));
+      res = true;
+
+      //iprintf("ADC = %d\n", HAL_ADC_GetValue(&adcALS));
+      //TODO LUT + enum for buckets?
+
+      *lux = HAL_ADC_GetValue(&adcALS);
    }
 
    HAL_ADC_Stop(&adcALS);
 
-   return false;
+   return res;
 }
 
 static bool _ADCConfig(void) {
@@ -67,15 +74,11 @@ static bool _ADCConfig(void) {
 
    adcChannel.Channel = ADC_CHANNEL_2;
    adcChannel.Rank = 1;
-   //adcChannel.SamplingTime = ADC_SAMPLETIME_71CYCLES_5;
 
    if (HAL_ADC_ConfigChannel(&adcALS, &adcChannel) != HAL_OK) {
       iprintf("als: Failed to configure ADC channel\n");
       return false;
    }
-
-   //FIXME rm
-   iprintf("done with ADC config\n");
 
    return true;
 }
