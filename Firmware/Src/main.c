@@ -77,7 +77,7 @@ int main(void)
       for(y = 0; y < 4; y++) {
          for(x = 0; x < 12; x++) {
             c.h = (x * 5) + (y * 8) + off;
-            led_DrawPixel(x, y, c);
+            led_DrawPixel(x, y, &c);
          }
       }
       off++;

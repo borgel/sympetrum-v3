@@ -113,13 +113,13 @@ void led_ClearDisplay(void) {
 }
 
 // Update the in-memory matrix representation
-void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV color) {
+void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(x > MATRIX_COLS || y > MATRIX_ROWS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
-   color_HSV2RGB(&color, &matrix[y][x]);
+   color_HSV2RGB(color, &matrix[y][x]);
 }
 
 // call to complete an entire draw cycle immediately
