@@ -56,14 +56,12 @@ int main(void)
 
    //testDarknetIR();
 
-   led_SetGlobalBrightness(100);
-
    IRInit();
 
    //FIXME rm?
    uint32_t lux;
    als_GetLux(&lux);
-   led_SetGlobalBrightness(10 + (lux / 10));
+   led_SetGlobalBrightness(60 + (lux / 10));
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
@@ -82,13 +80,15 @@ int main(void)
       }
 
       //permute
-      for(y = 0; y < 4; y++) {
-         for(x = 0; x < 12; x++) {
-            c.h = (x * 5) + (y * 8) + off;
-            led_DrawPixel(x, y, &c);
+      if(count % 50 == 0) {
+         for(y = 0; y < 4; y++) {
+            for(x = 0; x < 12; x++) {
+               c.h = off;
+               led_DrawPixel(x, y, &c);
+            }
          }
+         off++;
       }
-      off++;
 
       //FIXME rm
       if(count > 100) {
