@@ -50,6 +50,9 @@ enum DrawState {
 };
 
 struct MatrixState {
+   //TODO move?
+   uint8_t brightness;
+
    // the last row that was displayed
    uint8_t row;
 
@@ -112,12 +115,19 @@ void led_ClearDisplay(void) {
    _ForceUpdateRow();
 }
 
+void led_SetGlobalBrightness(uint8_t bright) {
+   matrixState.brightness = bright;
+}
+
 // Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(x > MATRIX_COLS || y > MATRIX_ROWS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
+
+   //disregard the V that was passed in and use global brightness
+   color->v = matrixState.brightness;
 
    color_HSV2RGB(color, &matrix[y][x]);
 }
