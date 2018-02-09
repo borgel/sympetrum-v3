@@ -8,6 +8,7 @@
 #include "iprintf.h"
 
 #include "led.h"
+#include "als.h"
 #include "board_id.h"
 #include "version.h"
 
@@ -47,8 +48,11 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
+   //FIXME mv?
+   als_Init();
+
    //FIXME en
-   led_Init();
+   //led_Init();
 
    //testDarknetIR();
 
@@ -60,6 +64,7 @@ int main(void)
    uint8_t off = 0;
 
    uint32_t bytes = 0;
+   uint32_t lux;
    while(true) {
       if(IRDataReady()) {
          iprintf("Got Full Message! ");
@@ -76,6 +81,9 @@ int main(void)
          }
       }
       off++;
+
+      //FIXME rm
+      als_GetLux(&lux);
    }
 
    return 0;
