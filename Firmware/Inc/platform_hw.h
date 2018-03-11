@@ -16,6 +16,9 @@
 #define ADC_IN_Pin         (GPIO_PIN_2)
 #define ADC_IN_Port        (GPIOA)
 
+#define POWER_EN_PIN       (GPIO_PIN_4)
+#define POWER_EN_PORT      (GPIOA)
+
 // right hip TP
 #define TP_B8_PIN          (GPIO_PIN_8)
 #define TP_B8_PORT         (GPIOB)

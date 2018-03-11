@@ -21,6 +21,7 @@ static void MX_GPIO_Init(void);
 static void MX_USART1_UART_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
+static void setKeepAlivePin(bool enable);
 
 /*
  * Setup all the non specific HW in the system.
@@ -31,11 +32,22 @@ bool platformHW_Init(void) {
 
    // Initialize all configured peripherals
    MX_GPIO_Init();
+
+   // we MUST pull this pin high ASAP before the user releases the power button!
+   setKeepAlivePin(true);
+
    MX_USART1_UART_Init();
    MX_USART2_UART_Init();
    MX_I2C1_Init();
 
    return true;
+}
+
+// set the strap that holds the regulator on. If this is disabled, the
+// unit powers off IMMEDIATELY.
+static void setKeepAlivePin(bool enable) {
+   uint8_t e = (enable) ? GPIO_PIN_SET : GPIO_PIN_RESET;
+   HAL_GPIO_WritePin(POWER_EN_PORT, POWER_EN_PIN, e);
 }
 
 /** System Clock Configuration
@@ -180,6 +192,13 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Pull = GPIO_PULLUP;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(USER_BUTTON_PORT, &GPIO_InitStruct);
+
+   // power enable strap line
+   GPIO_InitStruct.Pin = POWER_EN_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(POWER_EN_PORT, &GPIO_InitStruct);
 
    // setup diagnostic testpoints
    GPIO_InitStruct.Pin = TP_A15_PIN;
