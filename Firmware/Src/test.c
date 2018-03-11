@@ -27,9 +27,14 @@ static bool _TestALS(void) {
    return true;
 }
 
+// check if idle state is what's expected
 static bool _TestButtons(void) {
-   //TODO just print states?
-   //check if idle state is what's expected
+   // we expect user button to float high
+   if(HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN) != GPIO_PIN_SET) {
+      iprintf("user button was not asserted\n");
+      return false;
+   }
+   return true;
 }
 
 static bool _TestIRTXRX(void) {
