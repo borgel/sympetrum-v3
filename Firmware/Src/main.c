@@ -10,6 +10,7 @@
 #include "led.h"
 #include "als.h"
 #include "board_id.h"
+#include "test.h"
 #include "version.h"
 
 #include "ir.h"
@@ -57,6 +58,12 @@ int main(void)
    //testDarknetIR();
 
    IRInit();
+
+   // if we should enter test mode, do that
+   if(test_EnterTestMode()) {
+      // this should never return
+      test_DoTests();
+   }
 
    //FIXME rm?
    uint32_t lux;
