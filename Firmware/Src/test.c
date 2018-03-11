@@ -6,6 +6,8 @@
 
 #include <stdbool.h>
 
+static void _HandleTestFail(void);
+
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
    const uint8_t b8 = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
@@ -32,6 +34,9 @@ static bool _TestButtons(void) {
 
 static bool _TestIRTXRX(void) {
    //TODO send an IR msg and verify we got SOMETHING back
+
+   //FIXME rm?
+   return false;
 }
 
 // show the given color on all displays rows sequentially
@@ -59,12 +64,25 @@ static void _TestLEDs(void) {
 
 void test_DoTests(void) {
    while(true) {
-      _TestALS();
-      _TestButtons();
-      _TestIRTXRX();
+      if(!_TestALS()) {
+         _HandleTestFail();
+      }
+
+      if(!_TestButtons()) {
+         _HandleTestFail();
+      }
+
+      if(!_TestIRTXRX()) {
+         _HandleTestFail();
+      }
+
       _TestLEDs();
 
       HAL_Delay(1000);
    }
 }
 
+static void _HandleTestFail(void) {
+   iprintf("Terminal test failure\n");
+   while(true) {}
+}
