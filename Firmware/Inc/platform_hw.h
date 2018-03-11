@@ -16,6 +16,13 @@
 #define ADC_IN_Pin         (GPIO_PIN_2)
 #define ADC_IN_Port        (GPIOA)
 
+// right hip TP
+#define TP_B8_PIN          (GPIO_PIN_8)
+#define TP_B8_PORT         (GPIOB)
+
+// left hip TP
+#define TP_A15_PIN         (GPIO_PIN_15)
+#define TP_A15_PORT        (GPIOA)
 
 bool platformHW_Init(void);
 

@@ -62,8 +62,7 @@ void SystemClock_Config(void)
 
    /**Initializes the CPU, AHB and APB busses clocks 
     */
-   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-      |RCC_CLOCKTYPE_PCLK1;
+   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK|RCC_CLOCKTYPE_PCLK1;
    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
@@ -115,7 +114,6 @@ static void MX_USART1_UART_Init(void)
 /* USART2 init function */
 static void MX_USART2_UART_Init(void)
 {
-
    huart2.Instance = USART2;
    huart2.Init.BaudRate = 38400;
    huart2.Init.WordLength = UART_WORDLENGTH_8B;
@@ -135,7 +133,6 @@ static void MX_USART2_UART_Init(void)
 /* I2C1 init function */
 static void MX_I2C1_Init(void)
 {
-
    hi2c1.Instance = I2C1;
    hi2c1.Init.Timing = 0x0000020B;
    hi2c1.Init.OwnAddress1 = 0;
@@ -183,6 +180,19 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Pull = GPIO_PULLUP;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(USER_BUTTON_PORT, &GPIO_InitStruct);
+
+   // setup diagnostic testpoints
+   GPIO_InitStruct.Pin = TP_A15_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(TP_A15_PORT, &GPIO_InitStruct);
+
+   GPIO_InitStruct.Pin = TP_B8_PIN;
+   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+   HAL_GPIO_Init(TP_B8_PORT, &GPIO_InitStruct);
 
    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
