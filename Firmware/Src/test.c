@@ -18,7 +18,53 @@ bool test_EnterTestMode(void) {
    return false;
 }
 
+static bool _TestALS(void) {
+   //TODO sanity check ALS (non 0, non saturated)
+
+   // we can't really check for sure, so pretend it's fine
+   return true;
+}
+
+static bool _TestButtons(void) {
+   //TODO just print states?
+   //check if idle state is what's expected
+}
+
+static bool _TestIRTXRX(void) {
+   //TODO send an IR msg and verify we got SOMETHING back
+}
+
+// show the given color on all displays rows sequentially
+static void _ShowColorOnRows(struct color_ColorHSV * c) {
+   //display is 12 x 4
+   // set each row to R, G, B
+   for(int row = 0; row < 4; row++) {
+      //set this entire row
+      for(int col = 0; col < 12; col++) {
+         led_DrawPixel(row, col, *c);
+      }
+      HAL_Delay(1250);
+   }
+}
+
+static void _TestLEDs(void) {
+   struct color_ColorHSV r = {.h = 0, .s = 255, .v = 255};
+   struct color_ColorHSV g = {.h = 85, .s = 255, .v = 255};
+   struct color_ColorHSV b = {.h = 170, .s = 255, .v = 255};
+
+   _ShowColorOnRows(&r);
+   _ShowColorOnRows(&g);
+   _ShowColorOnRows(&b);
+}
+
 void test_DoTests(void) {
-   //TODO run tests
+   while(true) {
+      _TestALS();
+      _TestButtons();
+      _TestIRTXRX();
+      _TestLEDs();
+
+      HAL_Delay(1000);
+   }
 }
 
