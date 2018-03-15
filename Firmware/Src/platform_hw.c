@@ -193,6 +193,10 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(USER_BUTTON_PORT, &GPIO_InitStruct);
 
+   // user button EXTIs
+   HAL_NVIC_SetPriority(EXTI0_1_IRQn, 2, 0);
+   HAL_NVIC_EnableIRQ(EXTI0_1_IRQn);
+
    // power enable strap line
    GPIO_InitStruct.Pin = POWER_EN_PIN;
    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -213,6 +217,7 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(TP_B8_PORT, &GPIO_InitStruct);
 
+   //FIXME needed?
    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 }
