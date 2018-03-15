@@ -8,6 +8,7 @@
 #include "iprintf.h"
 
 #include "led.h"
+#include "als.h"
 #include "board_id.h"
 #include "version.h"
 
@@ -47,6 +48,9 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
+   //FIXME mv?
+   als_Init();
+
    //FIXME en
    led_Init();
 
@@ -54,10 +58,17 @@ int main(void)
 
    IRInit();
 
+   //FIXME rm?
+   uint32_t lux;
+   als_GetLux(&lux);
+   led_SetGlobalBrightness(60 + (lux / 10));
+
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
    int x, y;
    uint8_t off = 0;
+
+   int count = 0;
 
    uint32_t bytes = 0;
    while(true) {
@@ -69,13 +80,32 @@ int main(void)
       }
 
       //permute
-      for(y = 0; y < 4; y++) {
-         for(x = 0; x < 12; x++) {
-            c.h = (x * 5) + (y * 8) + off;
-            led_DrawPixel(x, y, c);
+      if(count % 50 == 0) {
+         for(y = 0; y < 4; y++) {
+            for(x = 0; x < 12; x++) {
+               c.h = off;
+               led_DrawPixel(x, y, &c);
+            }
          }
+         off++;
       }
-      off++;
+
+      //FIXME rm
+      if(count > 100) {
+         count = 0;
+
+         als_GetLux(&lux);
+         //calculate the brightness to set
+         if(60 + (lux / 10) > 255) {
+            led_SetGlobalBrightness(255);
+         }
+         else {
+            led_SetGlobalBrightness(60 + (lux / 10));
+         }
+
+         iprintf("counts = %d\n", lux);
+      }
+      count++;
    }
 
    return 0;

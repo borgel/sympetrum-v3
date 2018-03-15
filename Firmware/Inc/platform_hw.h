@@ -13,6 +13,10 @@
 #define USER_BUTTON_PIN    (GPIO_PIN_4)
 #define USER_BUTTON_PORT   (GPIOA)
 
+#define ADC_IN_Pin         (GPIO_PIN_2)
+#define ADC_IN_Port        (GPIOA)
+
+
 bool platformHW_Init(void);
 
 #endif//PLATFORM_HW_H__
