@@ -48,26 +48,36 @@ static bool _TestIRTXRX(void) {
 static void _ShowColorOnRows(struct color_ColorHSV * c) {
    //display is 12 x 4
    // set each row to R, G, B
-   for(int row = 0; row < 4; row++) {
+   for(int row = 0; row < 12; row++) {
       //set this entire row
-      for(int col = 0; col < 12; col++) {
+      for(int col = 0; col < 4; col++) {
          led_DrawPixel(row, col, c);
       }
-      HAL_Delay(1250);
    }
+   HAL_Delay(1250);
 }
 
 static void _TestLEDs(void) {
-   struct color_ColorHSV r = {.h = 0, .s = 255, .v = 255};
-   struct color_ColorHSV g = {.h = 85, .s = 255, .v = 255};
-   struct color_ColorHSV b = {.h = 170, .s = 255, .v = 255};
+   //TODO figure out real values for R/G/B
+   struct color_ColorHSV r = {.h = HSV_COLOR_R, .s = 255, .v = 255};
+   struct color_ColorHSV g = {.h = HSV_COLOR_G, .s = 255, .v = 255};
+   struct color_ColorHSV b = {.h = HSV_COLOR_B, .s = 255, .v = 255};
 
+   iprintf("R");
    _ShowColorOnRows(&r);
+   iprintf("G");
    _ShowColorOnRows(&g);
+   iprintf("B");
    _ShowColorOnRows(&b);
+   iprintf(" ");
 }
 
 void test_DoTests(void) {
+   iprintf("Starting Self Tests...\n");
+
+   // test init
+   led_SetGlobalBrightness(255);
+
    while(true) {
       if(!_TestALS()) {
          _HandleTestFail();
