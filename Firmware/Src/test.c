@@ -2,6 +2,7 @@
 #include "platform_hw.h"
 #include "color.h"
 #include "led.h"
+#include "ir.h"
 #include "iprintf.h"
 
 #include <stdbool.h>
@@ -12,6 +13,11 @@ static void _HandleTestFail(void);
 bool test_EnterTestMode(void) {
    const uint8_t b8 = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
    const uint8_t a15 = HAL_GPIO_ReadPin(TP_A15_PORT, TP_A15_PIN);
+
+   //FIXME rm, short on for now
+   return true;
+
+
 
    // strap b8 high and a15 low
    if(b8 == GPIO_PIN_SET && a15 == GPIO_PIN_RESET) {
@@ -38,10 +44,32 @@ static bool _TestButtons(void) {
 }
 
 static bool _TestIRTXRX(void) {
+   uint32_t bytes = 0;
+
    //TODO send an IR msg and verify we got SOMETHING back
 
-   //FIXME rm?
+   // try a TX, see if we got an RX
+   uint8_t buf[] = "Self Test IR";
+   iprintf("TX...");
+   IRTxBuff(buf, sizeof(buf) - 1);
+
+   //iprintf("done\n");
+   //iprintf("have %d bytes\n", IRBytesAvailable());
+   if(IRDataReady()) {
+      iprintf("Got self test message?");
+
+      uint8_t* buf = IRGetBuff(&bytes);
+      iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
+
+      //TODO memcmp them
+
+      return true;
+   }
+
    return false;
+
+   //FIXME rm?
+   //return true;
 }
 
 // show the given color on all displays rows sequentially

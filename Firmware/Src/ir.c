@@ -250,8 +250,9 @@ void IRInit(void) {
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
    HAL_Delay(10);
 
-   // force TIM17's output low so it never accidentally idles high after sending
-   HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_RESET);
+   // force TIM17's output high so the PFET says disabled
+   //HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_SET);
+   //HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_RESET);
 
    // always listen
    IRStartRx();
@@ -266,11 +267,16 @@ void IRStop() {
 
 // Transmit start pulse
 void IRStartStop(void) {
+   //iprintf("a");
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+   //iprintf("b");
    delayTicks(START_TICKS);
+   //iprintf("c");
 
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   //iprintf("d");
    delayTicks(START_TICKS);
+   //iprintf("e");
 }
 
 // Transmit a zero
@@ -314,7 +320,10 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 
    IRStartStop();
 
+   iprintf("T");
+
    for (uint8_t byte = 0; byte < len; byte++) {
+      iprintf("b");
       IRTxByte(buff[byte]);
       crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
    }

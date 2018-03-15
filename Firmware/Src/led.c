@@ -95,6 +95,9 @@ void led_Init(void){
    // set enable bit and scalar on all channels
    for(int i = 0; i < LED_CHANNELS; i++) {
       _EnableChannel(i, DIVISOR_4);
+
+      //FIXME rm
+      //_EnableChannel(i, DIVISOR_NONE);
    }
 
    _ForceUpdateRow();

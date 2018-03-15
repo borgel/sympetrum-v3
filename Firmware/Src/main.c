@@ -55,15 +55,18 @@ int main(void)
    //FIXME en
    led_Init();
 
-   //testDarknetIR();
-
    IRInit();
+
+   /*
+   //FIXME rm
+   testDarknetIR();
 
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
       // this should never return
       test_DoTests();
    }
+   */
 
    //FIXME rm?
    uint32_t lux;
@@ -98,7 +101,7 @@ int main(void)
       }
 
       //FIXME rm
-      if(count > 100) {
+      if(count > 8000) {
          count = 0;
 
          als_GetLux(&lux);
@@ -111,6 +114,7 @@ int main(void)
          }
 
          iprintf("counts = %d\n", lux);
+         //testDarknetIR();
       }
       count++;
    }
