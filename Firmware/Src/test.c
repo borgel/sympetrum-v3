@@ -51,7 +51,7 @@ static void _ShowColorOnRows(struct color_ColorHSV * c) {
    for(int row = 0; row < 4; row++) {
       //set this entire row
       for(int col = 0; col < 12; col++) {
-         led_DrawPixel(row, col, *c);
+         led_DrawPixel(row, col, c);
       }
       HAL_Delay(1250);
    }
