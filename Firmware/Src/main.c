@@ -29,7 +29,7 @@ union Interrupts {
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
 
-   IRInit();
+   //IRInit();
 
    iprintf("dnet IR init done\n");
 
@@ -57,10 +57,11 @@ int main(void)
 
    IRInit();
 
-   /*
    //FIXME rm
    testDarknetIR();
+   iprintf(">> DONE TEST DARKNET IR<<\n");
 
+   /*
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
       // this should never return
