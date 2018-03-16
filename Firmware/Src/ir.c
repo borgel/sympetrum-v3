@@ -90,7 +90,7 @@ static TIM_HandleTypeDef htim17;
 
 static void TIM17_Init(void);
 static void IRStartRx();
-static void IRStopRX();
+static bool IRStopRX();
 
 static crc_t crc_init(void);
 static crc_t crc_finalize(crc_t crc);
@@ -310,6 +310,9 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
    crc = crc_init();
 
+   //TODO disable
+   bool wasRXing = IRStopRX();
+
    //FIXME rm
    iprintf("TX send start\n");
    iprintf("buf at 0x%x is %d long: [", buff, len);
@@ -333,6 +336,10 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    IRTxByte(crc);
 
    IRStartStop();
+
+   if(wasRXing) {
+      IRStartRx();
+   }
 }
 
 // Shift bits into rx buffer
