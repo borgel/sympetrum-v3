@@ -378,18 +378,29 @@ int32_t IRBytesAvailable() {
    }
 }
 
-void IRStartRx() {
-   irRxBits = 0;
-   IRState = IR_RX_IDLE;
-   __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
-   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-   ShouldRX = true;
+// return the previous state
+static void IRStartRx() {
+   if(!ShouldRX) {
+      irRxBits = 0;
+      IRState = IR_RX_IDLE;
+      __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
+      HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
+      ShouldRX = true;
+   }
 }
 
-void IRStopRX() {
-   IRState = IR_RX_IDLE;
-   HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
-   ShouldRX = false;
+// return the previous state
+static bool IRStopRX() {
+   //FIXME does this brek anything?
+   if(ShouldRX) {
+      IRState = IR_RX_IDLE;
+      HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
+      ShouldRX = false;
+
+      // was enabled before
+      return true;
+   }
+   return false;
 }
 
 // Block until a packet is received OR the timeout expires
