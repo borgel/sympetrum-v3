@@ -37,6 +37,7 @@
 #include "ir.h"
 #include "platform_hw.h"
 #include "iprintf.h"
+#include "led.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
 #include "stm32f0xx_hal_gpio.h"
@@ -321,12 +322,11 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    }
    iprintf("]\n");
 
+   led_Pause();
+
    IRStartStop();
 
-   iprintf("T");
-
    for (uint8_t byte = 0; byte < len; byte++) {
-      iprintf("b");
       IRTxByte(buff[byte]);
       crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
    }
@@ -336,6 +336,8 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    IRTxByte(crc);
 
    IRStartStop();
+
+   led_Resume();
 
    if(wasRXing) {
       IRStartRx();
