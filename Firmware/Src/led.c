@@ -122,6 +122,14 @@ void led_SetGlobalBrightness(uint8_t bright) {
    matrixState.brightness = bright;
 }
 
+void led_Pause(void) {
+   led_MatrixStop();
+}
+
+void led_Resume(void) {
+   led_MatrixStart();
+}
+
 // Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(x > MATRIX_COLS || y > MATRIX_ROWS) {
