@@ -29,12 +29,12 @@ union Interrupts {
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
 
-   //IRInit();
-
-   iprintf("dnet IR init done\n");
+   /*
+   uint8_t b = 0x00;
+   IRTxBuff(&b, 1);
+   */
 
    uint8_t buf[] = "Test Str";
-
    iprintf("TX...");
    IRTxBuff(buf, sizeof(buf) - 1);
    iprintf("done\n");
@@ -53,9 +53,11 @@ int main(void)
    als_Init();
 
    //FIXME en
-   led_Init();
 
    IRInit();
+
+   iprintf("init LEDs\n");
+   led_Init();
 
    //FIXME rm
    testDarknetIR();
@@ -114,7 +116,7 @@ int main(void)
             led_SetGlobalBrightness(60 + (lux / 10));
          }
 
-         iprintf("counts = %d\n", lux);
+         //iprintf("counts = %d\n", lux);
          //testDarknetIR();
       }
       count++;
