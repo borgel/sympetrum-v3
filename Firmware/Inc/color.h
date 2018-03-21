@@ -21,8 +21,8 @@ struct color_ColorRGB {
 #define HSV_CHANNEL_MIN          0
 
 #define HSV_COLOR_R              0
-#define HSV_COLOR_G              127
-#define HSV_COLOR_B              254
+#define HSV_COLOR_G              85
+#define HSV_COLOR_B              170
 
 struct color_ColorHSV {
    uint8_t     h;

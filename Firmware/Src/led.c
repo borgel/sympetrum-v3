@@ -95,6 +95,9 @@ void led_Init(void){
    // set enable bit and scalar on all channels
    for(int i = 0; i < LED_CHANNELS; i++) {
       _EnableChannel(i, DIVISOR_4);
+
+      //FIXME rm
+      //_EnableChannel(i, DIVISOR_NONE);
    }
 
    _ForceUpdateRow();
@@ -117,6 +120,14 @@ void led_ClearDisplay(void) {
 
 void led_SetGlobalBrightness(uint8_t bright) {
    matrixState.brightness = bright;
+}
+
+void led_Pause(void) {
+   led_MatrixStop();
+}
+
+void led_Resume(void) {
+   led_MatrixStart();
 }
 
 // Update the in-memory matrix representation

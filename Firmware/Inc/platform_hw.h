@@ -10,12 +10,22 @@
 #define IR_RX_Pin          (GPIO_PIN_3)
 #define IR_RX_Port         (GPIOA)
 
-#define USER_BUTTON_PIN    (GPIO_PIN_4)
-#define USER_BUTTON_PORT   (GPIOA)
+#define USER_BUTTON_PIN    (GPIO_PIN_0)
+#define USER_BUTTON_PORT   (GPIOB)
 
 #define ADC_IN_Pin         (GPIO_PIN_2)
 #define ADC_IN_Port        (GPIOA)
 
+#define POWER_EN_PIN       (GPIO_PIN_4)
+#define POWER_EN_PORT      (GPIOA)
+
+// right hip TP
+#define TP_B8_PIN          (GPIO_PIN_8)
+#define TP_B8_PORT         (GPIOB)
+
+// left hip TP
+#define TP_A15_PIN         (GPIO_PIN_15)
+#define TP_A15_PORT        (GPIOA)
 
 bool platformHW_Init(void);
 

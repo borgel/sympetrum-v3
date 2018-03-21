@@ -37,6 +37,7 @@
 #include "ir.h"
 #include "platform_hw.h"
 #include "iprintf.h"
+#include "led.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
 #include "stm32f0xx_hal_gpio.h"
@@ -90,7 +91,7 @@ static TIM_HandleTypeDef htim17;
 
 static void TIM17_Init(void);
 static void IRStartRx();
-static void IRStopRX();
+static bool IRStopRX();
 
 static crc_t crc_init(void);
 static crc_t crc_finalize(crc_t crc);
@@ -190,8 +191,6 @@ void delayTicks(uint32_t ticks) {
    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
    HAL_TIM_Base_Start_IT(&htim3);
 
-   //iprintf("about to wait for tim\n");
-
    // Wait here until the timer overflow interrupt occurs
    while (IRMode == IR_TX) {
       __WFI();
@@ -246,12 +245,7 @@ void IRInit(void) {
    TIM3_Init();
    TIM17_Init();
 
-   // make sure the TX PWM is stopped
-   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
    HAL_Delay(10);
-
-   // force TIM17's output low so it never accidentally idles high after sending
-   HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_RESET);
 
    // always listen
    IRStartRx();
@@ -304,6 +298,8 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
    crc = crc_init();
 
+   bool wasRXing = IRStopRX();
+
    //FIXME rm
    iprintf("TX send start\n");
    iprintf("buf at 0x%x is %d long: [", buff, len);
@@ -311,6 +307,8 @@ void IRTxBuff(uint8_t *buff, size_t len) {
       iprintf("%c", buff[byte]);
    }
    iprintf("]\n");
+
+   led_Pause();
 
    IRStartStop();
 
@@ -324,6 +322,12 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    IRTxByte(crc);
 
    IRStartStop();
+
+   led_Resume();
+
+   if(wasRXing) {
+      IRStartRx();
+   }
 }
 
 // Shift bits into rx buffer
@@ -362,18 +366,32 @@ int32_t IRBytesAvailable() {
    }
 }
 
-void IRStartRx() {
-   irRxBits = 0;
-   IRState = IR_RX_IDLE;
-   __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
-   HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
-   ShouldRX = true;
+// return the previous state
+static void IRStartRx() {
+   if(!ShouldRX) {
+      iprintf("Starting RX\n");
+
+      irRxBits = 0;
+      IRState = IR_RX_IDLE;
+      __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
+      HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
+      ShouldRX = true;
+   }
 }
 
-void IRStopRX() {
-   IRState = IR_RX_IDLE;
-   HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
-   ShouldRX = false;
+// return the previous state
+static bool IRStopRX() {
+   if(ShouldRX) {
+      iprintf("Stopping RX\n");
+
+      IRState = IR_RX_IDLE;
+      HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
+      ShouldRX = false;
+
+      // was enabled before
+      return true;
+   }
+   return false;
 }
 
 // Block until a packet is received OR the timeout expires
