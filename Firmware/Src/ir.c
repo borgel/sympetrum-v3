@@ -191,8 +191,6 @@ void delayTicks(uint32_t ticks) {
    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
    HAL_TIM_Base_Start_IT(&htim3);
 
-   //iprintf("about to wait for tim\n");
-
    // Wait here until the timer overflow interrupt occurs
    while (IRMode == IR_TX) {
       __WFI();
@@ -247,13 +245,7 @@ void IRInit(void) {
    TIM3_Init();
    TIM17_Init();
 
-   // make sure the TX PWM is stopped
-   HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
    HAL_Delay(10);
-
-   // force TIM17's output high so the PFET says disabled
-   //HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_SET);
-   //HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_RESET);
 
    // always listen
    IRStartRx();
@@ -268,16 +260,11 @@ void IRStop() {
 
 // Transmit start pulse
 void IRStartStop(void) {
-   //iprintf("a");
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
-   //iprintf("b");
    delayTicks(START_TICKS);
-   //iprintf("c");
 
    HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
-   //iprintf("d");
    delayTicks(START_TICKS);
-   //iprintf("e");
 }
 
 // Transmit a zero
@@ -311,7 +298,6 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
    crc = crc_init();
 
-   //TODO disable
    bool wasRXing = IRStopRX();
 
    //FIXME rm
@@ -383,6 +369,8 @@ int32_t IRBytesAvailable() {
 // return the previous state
 static void IRStartRx() {
    if(!ShouldRX) {
+      iprintf("Starting RX\n");
+
       irRxBits = 0;
       IRState = IR_RX_IDLE;
       __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
@@ -393,8 +381,9 @@ static void IRStartRx() {
 
 // return the previous state
 static bool IRStopRX() {
-   //FIXME does this brek anything?
    if(ShouldRX) {
+      iprintf("Stopping RX\n");
+
       IRState = IR_RX_IDLE;
       HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
       ShouldRX = false;
