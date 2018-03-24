@@ -4,6 +4,15 @@
 #include <stdbool.h>
 #include "stm32f0xx_hal.h"
 
+// physical matrix properties
+// channels the controller provides natively
+#define LED_CHANNELS             (36)
+#define LED_BANKS                (4)
+
+#define MATRIX_ROWS              (4)
+#define MATRIX_COLS              (12)
+
+// GPIOs
 #define IR_TX_Pin          (GPIO_PIN_7)
 #define IR_TX_Port         (GPIOA)
 

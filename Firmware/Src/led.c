@@ -5,6 +5,7 @@
 #include "stm32f0xx_hal_i2c.h"
 #include "color.h"
 #include "iprintf.h"
+#include "platform_hw.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -30,11 +31,6 @@ enum led_Divisor {
    DIVISOR_4      = 0x3,
 };
 
-//channels the controller provides
-#define LED_CHANNELS             (36)
-
-#define MATRIX_ROWS              (4)
-#define MATRIX_COLS              (12)
 #define ROW_BLANKING             (4)
 
 //the number of timer ticks to wait before turning this row off
