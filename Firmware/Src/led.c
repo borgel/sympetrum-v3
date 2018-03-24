@@ -6,6 +6,7 @@
 #include "color.h"
 #include "iprintf.h"
 #include "platform_hw.h"
+#include "matrix_assignments.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -61,10 +62,18 @@ struct MatrixState {
 };
 static struct MatrixState matrixState = {.row = 0, .stage = DS_Start};
 
-// the in-memory version of the entire matrix, including a fifth row of solid black
+struct ColorPointer {
+   uint8_t *r;
+   uint8_t *g;
+   uint8_t *b;
+};
+
+// the underlying in-memory version of the entire matrix, including a fifth row of solid black
 // for blanking.
 // Remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
-static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
+static struct color_ColorRGB matrixRaw[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
+// this is the mapping layer used to access the matrix logically
+static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 
 // static LUT for controlling matrix row FETs
 static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
@@ -94,6 +103,8 @@ void led_TestInit(void) {
 void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
+
+   //TODO iterate through MatrixMap and assign the pointers in matrixMapped to point into the right place in matrixRaw
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
