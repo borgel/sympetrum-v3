@@ -7,6 +7,13 @@
 
 #include <stdbool.h>
 
+#define IR_ITERATIONS            (50)
+//FIXME what to set the threshold at?
+#define IR_TESTS_TO_PASS         (50)
+
+#define IR_SAMPLES_PER_STATE     (20)
+#define IR_SAMPLE_DELAY_MS       (1)
+
 static void _HandleTestFail(void);
 
 // check if we should enter test mode
@@ -43,33 +50,79 @@ static bool _TestButtons(void) {
    return true;
 }
 
-static bool _TestIRTXRX(void) {
-   uint32_t bytes = 0;
+// take a series of readings and report the mode or all samples IR RX pin states
+static GPIO_PinState _getModeIRPinState(int const samples, unsigned delayMS) {
+   int timesSet = 0;
+   int timesReset = 0;
 
-   //TODO send an IR msg and verify we got SOMETHING back
+   for(int i = 0; i < samples; i++) {
+      if(HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin) == GPIO_PIN_SET) {
+         timesSet++;
+      }
+      else {
+         timesReset++;
+      }
 
-   // try a TX, see if we got an RX
-   uint8_t buf[] = "Self Test IR";
-   iprintf("TX...");
-   IRTxBuff(buf, sizeof(buf) - 1);
-
-   //iprintf("done\n");
-   //iprintf("have %d bytes\n", IRBytesAvailable());
-   if(IRDataReady()) {
-      iprintf("Got self test message?");
-
-      uint8_t* buf = IRGetBuff(&bytes);
-      iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
-
-      //TODO memcmp them
-
-      return true;
+      //pause before taking the next sample
+      HAL_Delay(delayMS);
    }
 
-   return false;
+   if(timesSet > timesReset) {
+      return GPIO_PIN_SET;
+   }
+   return GPIO_PIN_RESET;
+}
 
-   //FIXME rm?
-   //return true;
+static bool _TestIRTXRX(void) {
+   /*
+      sample RX for 50 samples at 1?ms, take mode state (on or off)
+      randomly turn IR TX on or off
+      sample RX for 50 samples at 1?ms, take mode state (on or off)
+      compare set to read
+  */
+
+   int timesStatesWereExpected = 0;
+   int iterationsRemaining = IR_ITERATIONS;
+   GPIO_PinState firstState, secondState;
+
+   firstState = secondState = GPIO_PIN_RESET;
+
+   iprintf("Start IR test...\n");
+
+   for(;iterationsRemaining >= 0; iterationsRemaining--) {
+      firstState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
+
+      if(firstState == GPIO_PIN_SET) {
+         //IR idle, turn on LED to make it active low
+         //TODO
+      }
+      else {
+         //TODO
+      }
+
+      //FIXME needed?
+      HAL_Delay(1);
+
+      secondState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
+
+      if(firstState != secondState) {
+         iprintf("Test %d Success\n", iterationsRemaining);
+
+         // this is success, the state changed when we wanted it to
+         timesStatesWereExpected++;
+      }
+      else {
+         iprintf("Test %d Fail\n", iterationsRemaining);
+      }
+   }
+
+   iprintf("Total %d/%d passed\n", timesStatesWereExpected, IR_ITERATIONS);
+
+   // FIXME what should threshold be?
+   if(timesStatesWereExpected > IR_TESTS_TO_PASS) {
+      return true;
+   }
+   return false;
 }
 
 // show the given color on all displays rows sequentially
