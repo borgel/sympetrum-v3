@@ -2,10 +2,23 @@
 #include "platform_hw.h"
 #include "color.h"
 #include "led.h"
+#include "led_test.h"
 #include "ir.h"
+#include "ir_test.h"
 #include "iprintf.h"
 
 #include <stdbool.h>
+
+#define IR_ITERATIONS            (50)
+//FIXME what to set the threshold at?
+#define IR_TESTS_TO_PASS         (50)
+
+#define IR_SAMPLES_PER_STATE     (20)
+#define IR_SAMPLE_DELAY_MS       (1)
+
+#define LED_TEST_DELAY_MS        (2000)
+
+#define INTER_TEST_DELAY_MS      (2000)
 
 static void _HandleTestFail(void);
 
@@ -26,13 +39,6 @@ bool test_EnterTestMode(void) {
    return false;
 }
 
-static bool _TestALS(void) {
-   //TODO sanity check ALS (non 0, non saturated)
-
-   // we can't really check for sure, so pretend it's fine
-   return true;
-}
-
 // check if idle state is what's expected
 static bool _TestButtons(void) {
    // we expect user button to float high
@@ -43,53 +49,114 @@ static bool _TestButtons(void) {
    return true;
 }
 
-static bool _TestIRTXRX(void) {
-   uint32_t bytes = 0;
+// take a series of readings and report the mode or all samples IR RX pin states
+static GPIO_PinState _getModeIRPinState(int const samples, unsigned delayMS) {
+   int timesSet = 0;
+   int timesReset = 0;
 
-   //TODO send an IR msg and verify we got SOMETHING back
+   for(int i = 0; i < samples; i++) {
+      if(HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin) == GPIO_PIN_SET) {
+         timesSet++;
+      }
+      else {
+         timesReset++;
+      }
 
-   // try a TX, see if we got an RX
-   uint8_t buf[] = "Self Test IR";
-   iprintf("TX...");
-   IRTxBuff(buf, sizeof(buf) - 1);
-
-   //iprintf("done\n");
-   //iprintf("have %d bytes\n", IRBytesAvailable());
-   if(IRDataReady()) {
-      iprintf("Got self test message?");
-
-      uint8_t* buf = IRGetBuff(&bytes);
-      iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
-
-      //TODO memcmp them
-
-      return true;
+      //pause before taking the next sample
+      HAL_Delay(delayMS);
    }
 
-   return false;
+   if(timesSet > timesReset) {
+      return GPIO_PIN_SET;
+   }
+   return GPIO_PIN_RESET;
+}
 
-   //FIXME rm?
-   //return true;
+static bool _TestIRTXRX(void) {
+   /*
+      sample RX for 50 samples at 1?ms, take mode state (on or off)
+      randomly turn IR TX on or off
+      sample RX for 50 samples at 1?ms, take mode state (on or off)
+      compare set to read
+  */
+
+   int timesStatesWereExpected = 0;
+   int iterationsRemaining = IR_ITERATIONS;
+   GPIO_PinState firstState, secondState;
+
+   firstState = secondState = GPIO_PIN_RESET;
+
+   iprintf("Start IR tests\n");
+
+   for(;iterationsRemaining > 0; iterationsRemaining--) {
+      firstState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
+
+      if(firstState == GPIO_PIN_SET) {
+         //IR idle, turn on LED to make it active low
+         ir_TestSetEnableTX(IR_TXE_ENABLE);
+      }
+      else {
+         ir_TestSetEnableTX(IR_TXE_DISABLE);
+      }
+
+      //FIXME needed?
+      HAL_Delay(1);
+
+      secondState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
+
+      if(firstState != secondState) {
+         iprintf(".");
+
+         // this is success, the state changed when we wanted it to
+         timesStatesWereExpected++;
+      }
+      else {
+         iprintf("F");
+      }
+   }
+
+   iprintf("\n");
+   iprintf("Total %d/%d passed\n", timesStatesWereExpected, IR_ITERATIONS);
+
+   // make sure this turns back off
+   ir_TestSetEnableTX(IR_TXE_DISABLE);
+
+   // FIXME what should threshold be?
+   if(timesStatesWereExpected >= IR_TESTS_TO_PASS) {
+      return true;
+   }
+   return false;
 }
 
 // show the given color on all displays rows sequentially
-static void _ShowColorOnRows(struct color_ColorHSV * c) {
+static void _ShowColorOnRows(struct color_ColorRGB * c) {
+   struct color_ColorRGB black = {0};
    //display is 12 x 4
-   // set each row to R, G, B
-   for(int row = 0; row < 12; row++) {
-      //set this entire row
-      for(int col = 0; col < 4; col++) {
-         led_DrawPixel(row, col, c);
+   for(int bank = LED_TBANK_START; bank < LED_TBANK_END; bank++) {
+      led_TestExEnableBank(bank);
+
+      for(int led = 0; led < 12; led++) {
+         led_TestDrawPixel(led, bank, c);
+      }
+      led_TestRefresh(bank);
+
+      HAL_Delay(LED_TEST_DELAY_MS);
+
+      // turn off this bank
+      for(int led = 0; led < 12; led++) {
+         led_TestDrawPixel(led, bank, &black);
       }
    }
-   HAL_Delay(1250);
+
+   HAL_Delay(LED_TEST_DELAY_MS);
 }
 
 static void _TestLEDs(void) {
-   //TODO figure out real values for R/G/B
-   struct color_ColorHSV r = {.h = HSV_COLOR_R, .s = 255, .v = 255};
-   struct color_ColorHSV g = {.h = HSV_COLOR_G, .s = 255, .v = 255};
-   struct color_ColorHSV b = {.h = HSV_COLOR_B, .s = 255, .v = 255};
+   struct color_ColorRGB r = {.r = 255};
+   struct color_ColorRGB g = {.g = 255};
+   struct color_ColorRGB b = {.b = 255};
+
+   iprintf("Start LED Tests: ");
 
    iprintf("R");
    _ShowColorOnRows(&r);
@@ -97,20 +164,20 @@ static void _TestLEDs(void) {
    _ShowColorOnRows(&g);
    iprintf("B");
    _ShowColorOnRows(&b);
-   iprintf(" ");
+   iprintf("\n");
 }
 
 void test_DoTests(void) {
    iprintf("Starting Self Tests...\n");
 
    // test init
+   ir_TestInit();
+   led_TestInit();
+
+   //FIXME rm?
    led_SetGlobalBrightness(255);
 
    while(true) {
-      if(!_TestALS()) {
-         _HandleTestFail();
-      }
-
       if(!_TestButtons()) {
          _HandleTestFail();
       }
@@ -119,9 +186,11 @@ void test_DoTests(void) {
          _HandleTestFail();
       }
 
+      HAL_Delay(INTER_TEST_DELAY_MS);
+
       _TestLEDs();
 
-      HAL_Delay(1000);
+      HAL_Delay(INTER_TEST_DELAY_MS);
    }
 }
 

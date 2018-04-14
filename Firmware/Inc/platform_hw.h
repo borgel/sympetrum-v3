@@ -23,6 +23,10 @@
 #define TP_B8_PIN          (GPIO_PIN_8)
 #define TP_B8_PORT         (GPIOB)
 
+// below CPU TP
+#define TP_A5_PIN          (GPIO_PIN_5)
+#define TP_A5_PORT         (GPIOA)
+
 // left hip TP
 #define TP_A15_PIN         (GPIO_PIN_15)
 #define TP_A15_PORT        (GPIOA)

@@ -35,6 +35,7 @@
  */
 
 #include "ir.h"
+#include "ir_test.h"
 #include "platform_hw.h"
 #include "iprintf.h"
 #include "led.h"
@@ -88,6 +89,8 @@ static bool ShouldRX = false;
 
 TIM_HandleTypeDef htim3;
 static TIM_HandleTypeDef htim17;
+
+//TODO macro over TIM17 channel for PWM
 
 static void TIM17_Init(void);
 static void IRStartRx();
@@ -256,6 +259,32 @@ void IRInit(void) {
 void IRStop() {
    stopIRPulseTimer();
    ShouldRX = false;
+}
+
+// Init just the pieces required to test IR
+void ir_TestInit() {
+   GPIO_InitTypeDef GPIO_InitStruct;
+
+   // IR Receive GPIO configuration
+   GPIO_InitStruct.Pin = IR_RX_Pin;
+   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   HAL_GPIO_Init(IR_RX_Port, &GPIO_InitStruct);
+
+   // just the TX PWM
+   TIM17_Init();
+
+   HAL_Delay(10);
+}
+
+// Force IR TX PWM on and off
+void ir_TestSetEnableTX(enum ir_TestTXEnable en) {
+   if(en == IR_TXE_ENABLE) {
+      HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
+   }
+   else if(en == IR_TXE_DISABLE) {
+      HAL_TIM_PWM_Stop(&htim17, TIM_CHANNEL_1);
+   }
 }
 
 // Transmit start pulse
