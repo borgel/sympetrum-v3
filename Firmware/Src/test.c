@@ -34,13 +34,6 @@ bool test_EnterTestMode(void) {
    return false;
 }
 
-static bool _TestALS(void) {
-   //TODO sanity check ALS (non 0, non saturated)
-
-   // we can't really check for sure, so pretend it's fine
-   return true;
-}
-
 // check if idle state is what's expected
 static bool _TestButtons(void) {
    // we expect user button to float high
@@ -169,10 +162,6 @@ void test_DoTests(void) {
    led_SetGlobalBrightness(255);
 
    while(true) {
-      if(!_TestALS()) {
-         _HandleTestFail();
-      }
-
       if(!_TestButtons()) {
          _HandleTestFail();
       }
