@@ -254,9 +254,6 @@ void led_UpdateDisplay(void) {
 // enable one bank and disable the others
 void led_TestExEnableBank(enum led_TestBankID bank) {
    for(int i = LED_TBANK_START; i < LED_TBANK_END; i++) {
-      //FIXME rm
-      iprintf("Bank %d\n", i);
-
       if(i == bank) {
          // enable
          HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);

@@ -2,6 +2,7 @@
 #include "platform_hw.h"
 #include "color.h"
 #include "led.h"
+#include "led_test.h"
 #include "ir.h"
 #include "ir_test.h"
 #include "iprintf.h"
@@ -14,6 +15,10 @@
 
 #define IR_SAMPLES_PER_STATE     (20)
 #define IR_SAMPLE_DELAY_MS       (1)
+
+#define LED_TEST_DELAY_MS        (2000)
+
+#define INTER_TEST_DELAY_MS      (2000)
 
 static void _HandleTestFail(void);
 
@@ -124,23 +129,34 @@ static bool _TestIRTXRX(void) {
 }
 
 // show the given color on all displays rows sequentially
-static void _ShowColorOnRows(struct color_ColorHSV * c) {
+static void _ShowColorOnRows(struct color_ColorRGB * c) {
+   struct color_ColorRGB black = {0};
    //display is 12 x 4
-   // set each row to R, G, B
-   for(int row = 0; row < 12; row++) {
-      //set this entire row
-      for(int col = 0; col < 4; col++) {
-         led_DrawPixel(row, col, c);
+   for(int bank = LED_TBANK_START; bank < LED_TBANK_END; bank++) {
+      led_TestExEnableBank(bank);
+
+      for(int led = 0; led < 12; led++) {
+         led_TestDrawPixel(led, bank, c);
+      }
+      led_TestRefresh(bank);
+
+      HAL_Delay(LED_TEST_DELAY_MS);
+
+      // turn off this bank
+      for(int led = 0; led < 12; led++) {
+         led_TestDrawPixel(led, bank, &black);
       }
    }
-   HAL_Delay(1250);
+
+   HAL_Delay(LED_TEST_DELAY_MS);
 }
 
 static void _TestLEDs(void) {
-   //TODO figure out real values for R/G/B
-   struct color_ColorHSV r = {.h = HSV_COLOR_R, .s = 255, .v = 255};
-   struct color_ColorHSV g = {.h = HSV_COLOR_G, .s = 255, .v = 255};
-   struct color_ColorHSV b = {.h = HSV_COLOR_B, .s = 255, .v = 255};
+   struct color_ColorRGB r = {.r = 255};
+   struct color_ColorRGB g = {.g = 255};
+   struct color_ColorRGB b = {.b = 255};
+
+   iprintf("Start LED Tests: ");
 
    iprintf("R");
    _ShowColorOnRows(&r);
@@ -156,7 +172,7 @@ void test_DoTests(void) {
 
    // test init
    ir_TestInit();
-   led_Init();
+   led_TestInit();
 
    //FIXME rm?
    led_SetGlobalBrightness(255);
@@ -170,9 +186,11 @@ void test_DoTests(void) {
          _HandleTestFail();
       }
 
+      HAL_Delay(INTER_TEST_DELAY_MS);
+
       _TestLEDs();
 
-      HAL_Delay(1000);
+      HAL_Delay(INTER_TEST_DELAY_MS);
    }
 }
 
