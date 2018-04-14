@@ -3,6 +3,7 @@
 #include "color.h"
 #include "led.h"
 #include "ir.h"
+#include "ir_test.h"
 #include "iprintf.h"
 
 #include <stdbool.h>
@@ -87,17 +88,17 @@ static bool _TestIRTXRX(void) {
 
    firstState = secondState = GPIO_PIN_RESET;
 
-   iprintf("Start IR test...\n");
+   iprintf("Start IR tests\n");
 
-   for(;iterationsRemaining >= 0; iterationsRemaining--) {
+   for(;iterationsRemaining > 0; iterationsRemaining--) {
       firstState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
 
       if(firstState == GPIO_PIN_SET) {
          //IR idle, turn on LED to make it active low
-         //TODO
+         ir_TestSetEnableTX(IR_TXE_ENABLE);
       }
       else {
-         //TODO
+         ir_TestSetEnableTX(IR_TXE_DISABLE);
       }
 
       //FIXME needed?
@@ -106,20 +107,24 @@ static bool _TestIRTXRX(void) {
       secondState = _getModeIRPinState(IR_SAMPLES_PER_STATE, IR_SAMPLE_DELAY_MS);
 
       if(firstState != secondState) {
-         iprintf("Test %d Success\n", iterationsRemaining);
+         iprintf(".");
 
          // this is success, the state changed when we wanted it to
          timesStatesWereExpected++;
       }
       else {
-         iprintf("Test %d Fail\n", iterationsRemaining);
+         iprintf("F");
       }
    }
 
+   iprintf("\n");
    iprintf("Total %d/%d passed\n", timesStatesWereExpected, IR_ITERATIONS);
 
+   // make sure this turns back off
+   ir_TestSetEnableTX(IR_TXE_DISABLE);
+
    // FIXME what should threshold be?
-   if(timesStatesWereExpected > IR_TESTS_TO_PASS) {
+   if(timesStatesWereExpected >= IR_TESTS_TO_PASS) {
       return true;
    }
    return false;
@@ -150,13 +155,17 @@ static void _TestLEDs(void) {
    _ShowColorOnRows(&g);
    iprintf("B");
    _ShowColorOnRows(&b);
-   iprintf(" ");
+   iprintf("\n");
 }
 
 void test_DoTests(void) {
    iprintf("Starting Self Tests...\n");
 
    // test init
+   ir_TestInit();
+   led_Init();
+
+   //FIXME rm?
    led_SetGlobalBrightness(255);
 
    while(true) {
