@@ -49,6 +49,12 @@ int main(void)
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
 
+   // if we should enter test mode, do that
+   if(test_EnterTestMode()) {
+      // this should never return
+      test_DoTests();
+   }
+
    //FIXME mv?
    als_Init();
 
@@ -62,14 +68,6 @@ int main(void)
    //FIXME rm
    testDarknetIR();
    iprintf(">> DONE TEST DARKNET IR<<\n");
-
-   /*
-   // if we should enter test mode, do that
-   if(test_EnterTestMode()) {
-      // this should never return
-      test_DoTests();
-   }
-   */
 
    //FIXME rm?
    uint32_t lux;
