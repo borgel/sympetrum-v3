@@ -52,7 +52,8 @@ int main(void)
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
       // this should never return
-      test_DoTests();
+      //FIXME en
+      //test_DoTests();
    }
 
    //FIXME mv?

@@ -314,7 +314,6 @@ void led_TestRefresh(enum led_TestBankID bank) {
    // write a row
    _WriteRow(bank);
 
-   //FIXME correct?
    _ForceUpdateRow();
 }
 
