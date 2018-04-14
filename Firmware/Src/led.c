@@ -1,4 +1,5 @@
 #include "led.h"
+#include "led_test.h"
 
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_i2c.h"
@@ -73,16 +74,30 @@ static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
 static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
 static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
 
+static void _ConfigureLEDController(void);
 static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
 
 void led_Init(void){
+   // most HW init in platform_hw and hal_msp
+
+   _ConfigureLEDController();
+
+   // start up the frame clock. After this, it will be drawing to the display
+   _ConfigureFrameClock();
+}
+
+void led_TestInit(void) {
+   _ConfigureLEDController();
+
+   // don't turn on the frame clock
+}
+
+void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
-
-   //HW init in platform_hw and hal_msp
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -106,9 +121,6 @@ void led_Init(void){
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
-
-   // start up the frame clock. After this, it will be drawing to the display
-   _ConfigureFrameClock();
 }
 
 void led_ClearDisplay(void) {
@@ -239,6 +251,32 @@ void led_UpdateDisplay(void) {
    }
 }
 
+// enable one bank and disable the others
+void led_TestExEnableBank(enum led_TestBankID bank) {
+   for(int i = LED_TBANK_START; i < LED_TBANK_END; i++) {
+      //FIXME rm
+      iprintf("Bank %d\n", i);
+
+      if(i == bank) {
+         // enable
+         HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
+      }
+      else {
+         // disable
+         HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_SET);
+      }
+   }
+}
+
+void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
+   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+      iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
+      return;
+   }
+
+   memcpy(&matrix[y][x], color, sizeof(struct color_ColorRGB));
+}
+
 static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
    uint8_t config[LED_CHANNELS + 1 + 1] = {0};
@@ -273,6 +311,14 @@ static bool _EnableChannel(uint8_t chan, enum led_Divisor div) {
       return false;
    }
    return true;
+}
+
+void led_TestRefresh(enum led_TestBankID bank) {
+   // write a row
+   _WriteRow(bank);
+
+   //FIXME correct?
+   _ForceUpdateRow();
 }
 
 //update the contents of the display with what's in its memory
