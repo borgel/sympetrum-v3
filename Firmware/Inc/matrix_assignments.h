@@ -4,6 +4,7 @@
 
 #include "platform_hw.h"
 
+// should be 36 * 4 = 144
 #define TOTAL_CHANNELS     (LED_CHANNELS * LED_BANKS)
 
 /*
