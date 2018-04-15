@@ -8,6 +8,7 @@
 #include "iprintf.h"
 
 #include "led.h"
+#include "color.h"
 #include "als.h"
 #include "board_id.h"
 #include "test.h"
@@ -56,19 +57,17 @@ int main(void)
       //test_DoTests();
    }
 
-   //FIXME mv?
+   //FIXME mv? into LED?
    als_Init();
-
-   //FIXME en
 
    IRInit();
 
-   iprintf("init LEDs\n");
+   iprintf("Init LEDs\n");
    led_Init();
 
    //FIXME rm
-   testDarknetIR();
-   iprintf(">> DONE TEST DARKNET IR<<\n");
+   //testDarknetIR();
+   //iprintf(">> DONE TEST DARKNET IR<<\n");
 
    //FIXME rm?
    uint32_t lux;
@@ -81,6 +80,24 @@ int main(void)
    uint8_t off = 0;
 
    int count = 0;
+
+   //FIXME rm
+   struct color_ColorHSV black = {.h = 0, .s = 0, .v = 0};
+   while(true) {
+      if(count % 50 == 0) {
+         for(y = 0; y < 4; y++) {
+            for(x = 0; x < 12; x++) {
+               c.h = HSV_COLOR_R;
+
+               led_ClearDisplay();
+               led_DrawPixel(x, y, &c);
+
+               HAL_Delay(500);
+            }
+         }
+      }
+   }
+
 
    uint32_t bytes = 0;
    while(true) {
