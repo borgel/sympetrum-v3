@@ -54,7 +54,7 @@ int main(void)
    if(test_EnterTestMode()) {
       // this should never return
       //FIXME en
-      //test_DoTests();
+      test_DoTests();
    }
 
    //FIXME mv? into LED?

@@ -301,13 +301,14 @@ void led_TestExEnableBank(enum led_TestBankID bank) {
 }
 
 void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
-   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+   if(x > MATRIX_ROWS || y > MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
-   //FIXME TODO rewrite with mapper
-   memcpy(&matrixRaw[y][x], color, sizeof(struct color_ColorRGB));
+   *matrixMapped[x][y].r = color->r;
+   *matrixMapped[x][y].g = color->g;
+   *matrixMapped[x][y].b = color->b;
 }
 
 static bool _WriteRow(int rowIndex) {
