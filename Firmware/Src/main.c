@@ -94,8 +94,7 @@ int main(void)
       if(count % 50 == 0) {
          for(row = 0; row < 4; row++) {
             for(col = 0; col < 12; col++) {
-               iprintf("[%d,%d]\n", row, col);
-
+               //iprintf("[%d,%d]\n", row, col);
                led_ClearDisplay();
                led_DrawPixel(row, col, &c);
 
