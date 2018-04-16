@@ -156,11 +156,13 @@ void _ConfigureLEDController(void) {
             //FIXME fix and en
             //iprintf("[%d][%d] -> %d (G)\n", m->col, m->row, index);
             //matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch].g;
+            matrixMapped[m->row][m->col].g = &mRaw->g;
             break;
          case MMC_BLUE:
             //FIXME fix and en
             //iprintf("[%d][%d] -> %d (B)\n", m->col, m->row, index);
             //matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch].b;
+            matrixMapped[m->row][m->col].b = &mRaw->b;
             break;
       }
 
@@ -250,10 +252,8 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    color_HSV2RGB(color, &rgb);
    *matrixMapped[x][y].r = rgb.r;
    //FIXME en
-   //*matrixMapped[y][x].g = rgb.g;
-   //*matrixMapped[y][x].b = rgb.b;
-
-   iprintf("     r = %d\n", *matrixMapped[x][y].r);
+   *matrixMapped[x][y].g = rgb.g;
+   *matrixMapped[x][y].b = rgb.b;
 }
 
 // call to complete an entire draw cycle immediately
