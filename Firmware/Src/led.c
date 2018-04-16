@@ -71,10 +71,12 @@ struct ColorPointer {
 // the underlying in-memory version of the entire matrix, including a fifth row of solid black
 // for blanking.
 // Remember this is in 3 byte RGB groups (so it's 4 x 12 (it's tall)
+// 4 arrays of 12 long
 //                                           x              y
-static struct color_ColorRGB matrixRaw[MATRIX_ROWS + 1][MATRIX_COLS];// = {0};
+//TODO re-define as banks and channels? Would make it more clear what this is
+static struct color_ColorRGB matrixRaw[MATRIX_ROWS + 1][MATRIX_COLS];
 // this is the mapping layer used to access the matrix logically
-static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];// = {0};
+static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 
 // static LUT for controlling matrix row FETs
 static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
@@ -113,35 +115,28 @@ void _ConfigureLEDController(void) {
 
    //TODO iterate through MatrixMap and assign the pointers in matrixMapped to point into the right place in matrixRaw
    iprintf("Setting up matrix interposer...\n");
-   int index;
-   struct matrixMap const * m;
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
-      m = &MatrixMap[i];
+      struct matrixMap const * const m = &MatrixMap[i];
+      struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
 
       // set the pointers in matrixMapped to point to the correct elements in
       // the matrixRaw below it
 
       //0th element of matrix mapped goes to ?? element of Raw
-      index = (m->bank * LED_CHANNELS) + m->ch;
+      int const index = (m->bank * LED_CHANNELS) + m->ch;
 
       //iprintf("Loop %d, index %d (should be same)\n", i, index);
 
       switch(m->color) {
          case MMC_RED:
             //FIXME rm
-            iprintf("[%d][%d] -> %d (R)", m->row, m->col, index);
-            iprintf("         -> 0x%x\n", &matrixMapped[m->row][m->col]);
+            iprintf("[%d][%d] -> %d (%d, %d) Bank,Ch (R)\n", m->row, m->col, index, m->bank, m->ch);
+            iprintf("         -> 0x%x\n", &mRaw);
 
-            iprintf("   R 0x%x\n", &matrixRaw[index]->r);
+            iprintf("   R 0x%x\n", &mRaw->r);
             iprintf("   M 0x%x\n", matrixMapped[m->row][m->col].r);
 
-            //FIXME FIXME
-            THIS IS WRONG! MAXTRIX RAW IS A 2D MATRIX! CANT INDEX LIKE 1D!
-            //FIXME FIXME
-
-            //matrixMapped[m->row][m->col].r = &matrixRaw[index]->r;
-            matrixMapped[m->row][m->col].r = &matrixRaw[index]->r;
-            //matrixMapped[m->row][m->col].r = 5;
+            matrixMapped[m->row][m->col].r = &mRaw->r;
 
             iprintf("   A 0x%x\n", matrixMapped[m->row][m->col].r);
 
@@ -153,19 +148,19 @@ void _ConfigureLEDController(void) {
             iprintf("pointed = %d\n", *matrixMapped[m->row][m->col].r);
             *matrixMapped[m->row][m->col].r = 12;
             iprintf("pointed = %d\n", *matrixMapped[m->row][m->col].r);
-            iprintf("raw = %d\n", matrixRaw[index]->r);
-            matrixRaw[index]->r = 44;
-            iprintf("raw = %d\n", matrixRaw[index]->r);
+            iprintf("raw = %d\n", mRaw->r);
+            mRaw->r = 44;
+            iprintf("raw = %d\n", mRaw->r);
             break;
          case MMC_GREEN:
             //FIXME fix and en
             //iprintf("[%d][%d] -> %d (G)\n", m->col, m->row, index);
-            matrixMapped[m->row][m->col].g = &matrixRaw[index]->g;
+            //matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch].g;
             break;
          case MMC_BLUE:
             //FIXME fix and en
             //iprintf("[%d][%d] -> %d (B)\n", m->col, m->row, index);
-            matrixMapped[m->row][m->col].b = &matrixRaw[index]->b;
+            //matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch].b;
             break;
       }
 
@@ -243,19 +238,22 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    iprintf("Draw (%d,%d.b) 0x%x\n", x, y, &matrixMapped[x][y].b);
    */
 
-   iprintf("Draw (%d,%d) 0x%x\n", x, y, &matrixMapped[y][x]);
-   iprintf("Draw (%d,%d.r) 0x%x\n", x, y, &matrixMapped[y][x].r);
-   iprintf("     r = %d\n", *matrixMapped[y][x].r);
-   //iprintf("     r = %d\n", *matrixMapped[x][y].r);
-   iprintf("Draw (%d,%d.g) 0x%x\n", x, y, &matrixMapped[y][x].g);
-   iprintf("Draw (%d,%d.b) 0x%x\n", x, y, &matrixMapped[y][x].b);
+   iprintf("Draw (%d,%d) 0x%x\n", x, y, &matrixMapped[x][y]);
+   iprintf("Draw (%d,%d.&r) 0x%x\n", x, y, &matrixMapped[x][y].r);
+   iprintf("Draw (%d,%d.r) 0x%x (should be the raw ptr)\n", x, y, matrixMapped[x][y].r);
+   iprintf("     r = %d\n", *matrixMapped[x][y].r);
+   //iprintf("Draw (%d,%d.g) 0x%x\n", x, y, &matrixMapped[y][x].g);
+   //iprintf("Draw (%d,%d.b) 0x%x\n", x, y, &matrixMapped[y][x].b);
 
    //FIXME do this faster
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
-   *matrixMapped[y][x].r = rgb.r;
-   *matrixMapped[y][x].g = rgb.g;
-   *matrixMapped[y][x].b = rgb.b;
+   *matrixMapped[x][y].r = rgb.r;
+   //FIXME en
+   //*matrixMapped[y][x].g = rgb.g;
+   //*matrixMapped[y][x].b = rgb.b;
+
+   iprintf("     r = %d\n", *matrixMapped[x][y].r);
 }
 
 // call to complete an entire draw cycle immediately
