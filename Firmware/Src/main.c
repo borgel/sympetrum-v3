@@ -82,15 +82,22 @@ int main(void)
    int count = 0;
 
    //FIXME rm
-   struct color_ColorHSV black = {.h = 0, .s = 0, .v = 0};
+   //led_ClearDisplay();
+   //led_DrawPixel(0, 0, &c);
+   //while(1);
+
+   //FIXME rm
+   int row, col;
+   //struct color_ColorHSV black = {.h = 0, .s = 0, .v = 0};
+   c.h = HSV_COLOR_R;
    while(true) {
       if(count % 50 == 0) {
-         for(y = 0; y < 4; y++) {
-            for(x = 0; x < 12; x++) {
-               c.h = HSV_COLOR_R;
+         for(row = 0; row < 4; row++) {
+            for(col = 0; col < 12; col++) {
+               iprintf("[%d,%d]\n", row, col);
 
                led_ClearDisplay();
-               led_DrawPixel(x, y, &c);
+               led_DrawPixel(row, col, &c);
 
                HAL_Delay(500);
             }
