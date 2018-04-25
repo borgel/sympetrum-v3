@@ -186,17 +186,32 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //disregard the V that was passed in and use global brightness
    color->v = matrixState.brightness;
 
-   //FIXME rm
-   if(x == 0 && y == 0) {
-      iprintf("Target .r @ 0x%x\n", matrixMapped[x][y].r);
-   }
-
    //FIXME do this faster
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
+
+   /*
    *matrixMapped[x][y].r = rgb.r;
    *matrixMapped[x][y].g = rgb.g;
    *matrixMapped[x][y].b = rgb.b;
+   */
+   int target = 3 * ((x * MATRIX_COLS) + y);
+   iprintf("target = %d\n", target);
+
+   struct matrixMap const * const mr = &MatrixMap[target + 0];
+   struct matrixMap const * const mg = &MatrixMap[target + 1];
+   struct matrixMap const * const mb = &MatrixMap[target + 2];
+
+   //FIXME rm
+   if(x == 0 && y == 0) {
+      iprintf("Target .r @ 0x%x\n", matrixMapped[x][y].r);
+      iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
+   }
+
+
+   matrixRaw[mr->bank][mr->ch].r = rgb.r;
+   matrixRaw[mg->bank][mg->ch].g = rgb.g;
+   matrixRaw[mb->bank][mb->ch].b = rgb.b;
 }
 
 // call to complete an entire draw cycle immediately

@@ -182,5 +182,6 @@ const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
    {3,  33,	 3, 11,	MMC_RED   },
    {3,  34,	 3, 11,	MMC_GREEN },
    {3,  35,	 3, 11,	MMC_BLUE  },
+   //143
 };
 
