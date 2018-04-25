@@ -42,6 +42,26 @@ static void testDarknetIR(void) {
    iprintf("have %d bytes\n", IRBytesAvailable());
 }
 
+// just paint the display white
+static void fillWhite(void) {
+   struct color_ColorHSV c = {.h = 10, .s = 0, .v = 255};
+   int row, col;
+
+   iprintf("Fill display white forever\n");
+   while(true) {
+      for(row = 0; row < 4; row++) {
+         for(col = 0; col < 12; col++) {
+            iprintf("[%d,%d]\n", row, col);
+
+            //led_ClearDisplay();
+            led_DrawPixel(row, col, &c);
+
+            //HAL_Delay(500);
+         }
+      }
+   }
+}
+
 int main(void)
 {
    HAL_Init();
@@ -54,7 +74,7 @@ int main(void)
    if(test_EnterTestMode()) {
       // this should never return
       //FIXME en
-      test_DoTests();
+      //test_DoTests();
    }
 
    //FIXME mv? into LED?
@@ -76,10 +96,6 @@ int main(void)
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
-   int x, y;
-   uint8_t off = 0;
-
-   int count = 0;
 
    //FIXME rm
    //led_ClearDisplay();
@@ -90,21 +106,33 @@ int main(void)
    int row, col;
    //struct color_ColorHSV black = {.h = 0, .s = 0, .v = 0};
    c.h = HSV_COLOR_R;
-   while(true) {
-      if(count % 50 == 0) {
-         for(row = 0; row < 4; row++) {
-            for(col = 0; col < 12; col++) {
-               //iprintf("[%d,%d]\n", row, col);
-               led_ClearDisplay();
-               led_DrawPixel(row, col, &c);
 
-               HAL_Delay(500);
-            }
+   iprintf("Fill display red forever\n");
+   //bank, LED
+   led_DrawPixel(0, 0, &c);
+   //led_DrawPixel(0, 1, &c);
+   //led_DrawPixel(0, 2, &c);
+   //led_DrawPixel(0, 3, &c);
+   //led_DrawPixel(0, 4, &c);
+
+   while(1);
+
+   while(true) {
+      for(row = 0; row < 4; row++) {
+         for(col = 0; col < 12; col++) {
+            //iprintf("[%d,%d]\n", row, col);
+
+            //led_ClearDisplay();
+            led_DrawPixel(row, col, &c);
+
+            //HAL_Delay(500);
          }
       }
    }
 
-
+   int x, y;
+   int count = 0;
+   uint8_t off = 0;
    uint32_t bytes = 0;
    while(true) {
       if(IRDataReady()) {
@@ -116,8 +144,8 @@ int main(void)
 
       //permute
       if(count % 50 == 0) {
-         for(y = 0; y < 4; y++) {
-            for(x = 0; x < 12; x++) {
+         for(x = 0; x < 4; x++) {
+            for(y = 0; y < 12; y++) {
                c.h = off;
                led_DrawPixel(x, y, &c);
             }

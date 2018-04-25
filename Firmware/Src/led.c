@@ -110,10 +110,14 @@ void _ConfigureLEDController(void) {
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
-      struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
+      //struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
+      struct color_ColorRGB * const mRaw = &matrixRaw[m->bank][m->ch];
 
       // set the pointers in matrixMapped to point to the correct elements in
       // the matrixRaw below it
+
+      //FIXME rm
+      iprintf("%d,%d -> b %d,ch %d @.r 0x%x\n", m->row, m->col, m->bank, m->ch, &mRaw->r);
 
       switch(m->color) {
          case MMC_RED:
@@ -181,6 +185,11 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
 
    //disregard the V that was passed in and use global brightness
    color->v = matrixState.brightness;
+
+   //FIXME rm
+   if(x == 0 && y == 0) {
+      iprintf("Target .r @ 0x%x\n", matrixMapped[x][y].r);
+   }
 
    //FIXME do this faster
    struct color_ColorRGB rgb;
