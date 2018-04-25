@@ -9,6 +9,9 @@
 #define LED_CHANNELS             (36)
 #define LED_BANKS                (4)
 
+// 1 channel for each R/G/B makes up a single logical LED
+#define LED_CHANNELS_PER_LED     (3)
+
 #define MATRIX_ROWS              (4)
 #define MATRIX_COLS              (12)
 

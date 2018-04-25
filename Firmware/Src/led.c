@@ -74,7 +74,7 @@ struct ColorPointer {
 // 4 arrays of 12 long
 //                                           x              y
 //TODO re-define as banks and channels? Would make it more clear what this is
-static struct color_ColorRGB matrixRaw[MATRIX_ROWS + 1][MATRIX_COLS];
+static struct color_ColorRGB matrixRaw[LED_BANKS + 1][LED_CHANNELS / LED_CHANNELS_PER_LED];
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 
