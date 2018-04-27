@@ -325,14 +325,37 @@ void led_TestExEnableBank(enum led_TestBankID bank) {
 }
 
 void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
-   if(x > MATRIX_ROWS || y > MATRIX_COLS) {
+   // base 0
+   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
+   //FIXME rm broken, uses ptr map
+   /*
    *matrixMapped[x][y].r = color->r;
    *matrixMapped[x][y].g = color->g;
    *matrixMapped[x][y].b = color->b;
+   */
+
+   //XXX works, it's just all raw
+   /*
+   matrixRaw[x][y].r = color->r;
+   matrixRaw[x][y].g = color->g;
+   matrixRaw[x][y].b = color->b;
+   */
+   int target = 3 * ((x * MATRIX_COLS) + y);
+   iprintf("target = %d\n", target);
+
+   struct matrixMap const * const mr = &MatrixMap[target + 0];
+   struct matrixMap const * const mg = &MatrixMap[target + 1];
+   struct matrixMap const * const mb = &MatrixMap[target + 2];
+
+   iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
+
+   matrixRaw[mr->bank][mr->ch].r = color->r;
+   matrixRaw[mg->bank][mg->ch].g = color->g;
+   matrixRaw[mb->bank][mb->ch].b = color->b;
 }
 
 static bool _WriteRow(int rowIndex) {
