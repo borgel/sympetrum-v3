@@ -352,10 +352,12 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    struct matrixMap const * const mb = &MatrixMap[target + 2];
 
    iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
+   iprintf("bank = %d, ch = %d\n", mg->bank, mg->ch);
+   iprintf("bank = %d, ch = %d\n", mb->bank, mb->ch);
 
-   matrixRaw[mr->bank][mr->ch].r = color->r;
-   matrixRaw[mg->bank][mg->ch].g = color->g;
-   matrixRaw[mb->bank][mb->ch].b = color->b;
+   matrixRaw[mr->row][mr->col].r = color->r;
+   matrixRaw[mg->row][mg->col].g = color->g;
+   matrixRaw[mb->row][mb->col].b = color->b;
 }
 
 static bool _WriteRow(int rowIndex) {
