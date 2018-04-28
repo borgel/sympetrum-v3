@@ -108,35 +108,33 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
-   /*
       //FIXME rework with new raw matrix
    //FIXME rm this?
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
       //struct color_ColorRGB * const mRaw = &matrixRaw[m->bank][m->ch];
-      struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
+      //struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
 
       // set the pointers in matrixMapped to point to the correct elements in
       // the matrixRaw below it
 
       //FIXME rm
-      iprintf("%d,%d -> b %d,ch %d @.r 0x%x\n", m->row, m->col, m->bank, m->ch, &mRaw->r);
+      iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
 
       switch(m->color) {
          case MMC_RED:
-            matrixMapped[m->row][m->col].r = &mRaw->r;
+            matrixMapped[m->row][m->col].r = &matrixRaw[m->bank][m->ch];
             break;
          case MMC_GREEN:
-            matrixMapped[m->row][m->col].g = &mRaw->g;
+            matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch];
             break;
          case MMC_BLUE:
-            matrixMapped[m->row][m->col].b = &mRaw->b;
+            matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch];
             break;
       }
    }
    iprintf("Done\n");
-   */
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -340,12 +338,10 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
       return;
    }
 
-   /*
-      //might work, but disable for now
+   //might work, but disable for now
    *matrixMapped[x][y].r = color->r;
    *matrixMapped[x][y].g = color->g;
    *matrixMapped[x][y].b = color->b;
-   */
 
    //XXX works, it's just all raw
    /*
@@ -371,6 +367,7 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    matrixRaw[mb->row][mb->col].b = color->b;
    */
 
+   /*
    int target = 3 * ((x * MATRIX_COLS) + y);
    iprintf("target in mapper = %d\n", target);
 
@@ -385,6 +382,7 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    matrixRaw[mr->bank][mr->ch] = color->r;
    matrixRaw[mg->bank][mg->ch] = color->g;
    matrixRaw[mb->bank][mb->ch] = color->b;
+   */
 }
 
 static bool _WriteRow(int rowIndex) {
