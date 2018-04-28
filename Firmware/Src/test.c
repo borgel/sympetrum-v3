@@ -131,23 +131,46 @@ static bool _TestIRTXRX(void) {
 // show the given color on all displays rows sequentially
 static void _ShowColorOnRows(struct color_ColorRGB * c) {
    struct color_ColorRGB white = {255, 255, 255};
+
+   int bank = LED_TBANK_START;
+
+   /*
+   iprintf("\n-------\nBank %d (ee %d)\n", bank, bank + 1);
+
+   led_TestExEnableBank(bank);
+
+   //for(int led = 0; led < 1; led++) {
+   for(int led = 0; led < 12; led++) {
+      iprintf("\nBank %d, led %d\n", bank, led);
+      //led_TestDrawPixel(bank, led, &white);
+      led_TestDrawPixel(bank, led, c);
+      led_TestRefresh(bank);
+
+      HAL_Delay(500);
+   }
+
+   //FIXME rm
+   iprintf("Done, hanging self\n");
+   while(1);
+   */
+
    //display is 12 x 4
-   for(int bank = LED_TBANK_START; bank < LED_TBANK_END; bank++) {
+   for(bank = LED_TBANK_START; bank < LED_TBANK_END; bank++) {
       iprintf("\n-------\nBank %d (ee %d)\n", bank, bank + 1);
 
       led_TestExEnableBank(bank);
 
+      //for(int led = 0; led < 1; led++) {
       for(int led = 0; led < 12; led++) {
          iprintf("\nBank %d, led %d\n", bank, led);
-         led_TestDrawPixel(bank, led, &white);
+         //led_TestDrawPixel(bank, led, &white);
+         led_TestDrawPixel(bank, led, c);
       }
       led_TestRefresh(bank);
 
       //FIXME rm
       iprintf("Done, hanging self\n");
       while(1);
-
-
    }
 
 

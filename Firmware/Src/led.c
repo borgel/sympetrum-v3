@@ -74,7 +74,8 @@ struct ColorPointer {
 // 4 arrays of 12 long
 //                                           x              y
 //TODO re-define as banks and channels? Would make it more clear what this is
-static struct color_ColorRGB matrixRaw[LED_BANKS + 1][LED_CHANNELS / LED_CHANNELS_PER_LED];
+//static struct color_ColorRGB matrixRaw[LED_BANKS + 1][LED_CHANNELS / LED_CHANNELS_PER_LED];
+static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 
@@ -107,11 +108,14 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
+   /*
+      //FIXME rework with new raw matrix
+   //FIXME rm this?
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
-      //struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
-      struct color_ColorRGB * const mRaw = &matrixRaw[m->bank][m->ch];
+      //struct color_ColorRGB * const mRaw = &matrixRaw[m->bank][m->ch];
+      struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
 
       // set the pointers in matrixMapped to point to the correct elements in
       // the matrixRaw below it
@@ -132,6 +136,7 @@ void _ConfigureLEDController(void) {
       }
    }
    iprintf("Done\n");
+   */
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -195,6 +200,10 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    *matrixMapped[x][y].g = rgb.g;
    *matrixMapped[x][y].b = rgb.b;
    */
+
+   //FIXME redo with new raw matrix
+
+   /*
    int target = 3 * ((x * MATRIX_COLS) + y);
    iprintf("target = %d\n", target);
 
@@ -208,10 +217,10 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
       iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
    }
 
-
    matrixRaw[mr->bank][mr->ch].r = rgb.r;
    matrixRaw[mg->bank][mg->ch].g = rgb.g;
    matrixRaw[mb->bank][mb->ch].b = rgb.b;
+   */
 }
 
 // call to complete an entire draw cycle immediately
@@ -331,8 +340,8 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
       return;
    }
 
-   //FIXME rm broken, uses ptr map
    /*
+      //might work, but disable for now
    *matrixMapped[x][y].r = color->r;
    *matrixMapped[x][y].g = color->g;
    *matrixMapped[x][y].b = color->b;
@@ -344,20 +353,38 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    matrixRaw[x][y].g = color->g;
    matrixRaw[x][y].b = color->b;
    */
+
+   /*
    int target = 3 * ((x * MATRIX_COLS) + y);
-   iprintf("target = %d\n", target);
+   iprintf("target in mapper = %d\n", target);
 
    struct matrixMap const * const mr = &MatrixMap[target + 0];
    struct matrixMap const * const mg = &MatrixMap[target + 1];
    struct matrixMap const * const mb = &MatrixMap[target + 2];
 
-   iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
-   iprintf("bank = %d, ch = %d\n", mg->bank, mg->ch);
-   iprintf("bank = %d, ch = %d\n", mb->bank, mb->ch);
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mr->bank, mr->ch, mr->col, mr->color);
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mg->bank, mg->ch, mg->col, mg->color);
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mb->bank, mb->ch, mb->col, mb->color);
 
    matrixRaw[mr->row][mr->col].r = color->r;
    matrixRaw[mg->row][mg->col].g = color->g;
    matrixRaw[mb->row][mb->col].b = color->b;
+   */
+
+   int target = 3 * ((x * MATRIX_COLS) + y);
+   iprintf("target in mapper = %d\n", target);
+
+   struct matrixMap const * const mr = &MatrixMap[target + 0];
+   struct matrixMap const * const mg = &MatrixMap[target + 1];
+   struct matrixMap const * const mb = &MatrixMap[target + 2];
+
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mr->bank, mr->ch, mr->col, mr->color);
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mg->bank, mg->ch, mg->col, mg->color);
+   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mb->bank, mb->ch, mb->col, mb->color);
+
+   matrixRaw[mr->bank][mr->ch] = color->r;
+   matrixRaw[mg->bank][mg->ch] = color->g;
+   matrixRaw[mb->bank][mb->ch] = color->b;
 }
 
 static bool _WriteRow(int rowIndex) {
