@@ -136,7 +136,7 @@ static void _ShowColorOnRows(struct color_ColorRGB * c) {
       led_TestExEnableBank(bank);
 
       for(int led = 0; led < 12; led++) {
-         led_TestDrawPixel(led, bank, c);
+         led_TestDrawPixel(bank, led, c);
       }
       led_TestRefresh(bank);
 
@@ -144,7 +144,7 @@ static void _ShowColorOnRows(struct color_ColorRGB * c) {
 
       // turn off this bank
       for(int led = 0; led < 12; led++) {
-         led_TestDrawPixel(led, bank, &black);
+         led_TestDrawPixel(bank, led, &black);
       }
    }
 

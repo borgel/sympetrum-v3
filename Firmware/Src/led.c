@@ -5,6 +5,8 @@
 #include "stm32f0xx_hal_i2c.h"
 #include "color.h"
 #include "iprintf.h"
+#include "platform_hw.h"
+#include "matrix_assignments.h"
 
 #include <stdint.h>
 #include <string.h>
@@ -30,11 +32,6 @@ enum led_Divisor {
    DIVISOR_4      = 0x3,
 };
 
-//channels the controller provides
-#define LED_CHANNELS             (36)
-
-#define MATRIX_ROWS              (4)
-#define MATRIX_COLS              (12)
 #define ROW_BLANKING             (4)
 
 //the number of timer ticks to wait before turning this row off
@@ -65,14 +62,23 @@ struct MatrixState {
 };
 static struct MatrixState matrixState = {.row = 0, .stage = DS_Start};
 
-// the in-memory version of the entire matrix, including a fifth row of solid black
+struct ColorPointer {
+   uint8_t *r;
+   uint8_t *g;
+   uint8_t *b;
+};
+
+// the underlying in-memory version of the entire matrix, including a fifth row of solid black
 // for blanking.
-// Remember this is in 3 byte RGB groups (so it's 12 * 3 wide)
-static struct color_ColorRGB matrix[MATRIX_ROWS + 1][MATRIX_COLS] = {0};
+// 4 arrays of 36 bytes long. Physical LEDs divide into groups of 3
+//                           x              y
+static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
+// this is the mapping layer used to access the matrix logically
+static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 
 // static LUT for controlling matrix row FETs
-static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
-static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
+static uint16_t const MatrixPinLUT[]         = {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
+static GPIO_TypeDef * const MatrixPortLUT[]  = {GPIOA, GPIOB, GPIOB, GPIOB};
 
 static void _ConfigureLEDController(void);
 static void _ConfigureFrameClock(void);
@@ -98,6 +104,29 @@ void led_TestInit(void) {
 void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
+
+   iprintf("Setting up matrix interposer...\n");
+   for(int i = 0; i < TOTAL_CHANNELS; i++) {
+      struct matrixMap const * const m = &MatrixMap[i];
+      // set the pointers in matrixMapped to point to the correct elements in
+      // the matrixRaw below it
+
+      //FIXME rm
+      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
+
+      switch(m->color) {
+         case MMC_RED:
+            matrixMapped[m->row][m->col].r = &matrixRaw[m->bank][m->ch];
+            break;
+         case MMC_GREEN:
+            matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch];
+            break;
+         case MMC_BLUE:
+            matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch];
+            break;
+      }
+   }
+   iprintf("Done\n");
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -126,7 +155,7 @@ void _ConfigureLEDController(void) {
 void led_ClearDisplay(void) {
    //TODO actually disable the channels to save power
 
-   memset(matrix, '\0', sizeof(matrix));
+   memset(matrixRaw, '\0', sizeof(matrixRaw));
    _ForceUpdateRow();
 }
 
@@ -144,7 +173,7 @@ void led_Resume(void) {
 
 // Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
-   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
@@ -152,7 +181,13 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //disregard the V that was passed in and use global brightness
    color->v = matrixState.brightness;
 
-   color_HSV2RGB(color, &matrix[y][x]);
+   //FIXME do this more elegantly?
+   struct color_ColorRGB rgb;
+   color_HSV2RGB(color, &rgb);
+
+   *matrixMapped[x][y].r = rgb.r;
+   *matrixMapped[x][y].g = rgb.g;
+   *matrixMapped[x][y].b = rgb.b;
 }
 
 // call to complete an entire draw cycle immediately
@@ -266,12 +301,15 @@ void led_TestExEnableBank(enum led_TestBankID bank) {
 }
 
 void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
-   if(x > MATRIX_COLS || y > MATRIX_ROWS) {
+   // base 0, so if there are 3 rows valid indicies are 0, 1, 2. Asking for 3 is too many
+   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
-   memcpy(&matrix[y][x], color, sizeof(struct color_ColorRGB));
+   *matrixMapped[x][y].r = color->r;
+   *matrixMapped[x][y].g = color->g;
+   *matrixMapped[x][y].b = color->b;
 }
 
 static bool _WriteRow(int rowIndex) {
@@ -283,12 +321,13 @@ static bool _WriteRow(int rowIndex) {
    //set the final byte to force the controller to update its outputs
    config[LED_CHANNELS + 1] = 0x0;
 
-   //FIXME better way? somehow expose a buffer to write into??
-   memcpy(&config[1], matrix[rowIndex], LED_CHANNELS);
+   //FIXME better way? somehow expose a buffer to write into?
+   //TODO DMA this
+   memcpy(&config[1], matrixRaw[rowIndex], LED_CHANNELS);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    if(stat != 0) {
-      iprintf("Stat = 0x%x\n", stat);
+      iprintf("Row Stat = 0x%x\n", stat);
       return false;
    }
    return true;
@@ -304,7 +343,7 @@ static bool _EnableChannel(uint8_t chan, enum led_Divisor div) {
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
    if(stat != 0) {
-      iprintf("Stat = 0x%x\n", stat);
+      iprintf("En Chan Stat = 0x%x\n", stat);
       return false;
    }
    return true;
@@ -326,7 +365,7 @@ static bool _ForceUpdateRow(void) {
    config[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 1000);
    if(stat != 0) {
-      iprintf("Stat = 0x%x\n", stat);
+      iprintf("Update Channels Stat = 0x%x\n", stat);
       return false;
    }
    return true;

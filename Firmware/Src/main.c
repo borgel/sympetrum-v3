@@ -8,6 +8,7 @@
 #include "iprintf.h"
 
 #include "led.h"
+#include "color.h"
 #include "als.h"
 #include "board_id.h"
 #include "test.h"
@@ -41,6 +42,26 @@ static void testDarknetIR(void) {
    iprintf("have %d bytes\n", IRBytesAvailable());
 }
 
+// just paint the display white
+static void fillWhite(void) {
+   struct color_ColorHSV c = {.h = 10, .s = 0, .v = 255};
+   int row, col;
+
+   iprintf("Fill display white forever\n");
+   while(true) {
+      for(row = 0; row < 4; row++) {
+         for(col = 0; col < 12; col++) {
+            iprintf("[%d,%d]\n", row, col);
+
+            //led_ClearDisplay();
+            led_DrawPixel(row, col, &c);
+
+            //HAL_Delay(500);
+         }
+      }
+   }
+}
+
 int main(void)
 {
    HAL_Init();
@@ -56,19 +77,17 @@ int main(void)
       //test_DoTests();
    }
 
-   //FIXME mv?
+   //FIXME mv? into LED?
    als_Init();
-
-   //FIXME en
 
    IRInit();
 
-   iprintf("init LEDs\n");
+   iprintf("Init LEDs\n");
    led_Init();
 
    //FIXME rm
-   testDarknetIR();
-   iprintf(">> DONE TEST DARKNET IR<<\n");
+   //testDarknetIR();
+   //iprintf(">> DONE TEST DARKNET IR<<\n");
 
    //FIXME rm?
    uint32_t lux;
@@ -77,11 +96,10 @@ int main(void)
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
+
    int x, y;
-   uint8_t off = 0;
-
    int count = 0;
-
+   uint8_t off = 0;
    uint32_t bytes = 0;
    while(true) {
       if(IRDataReady()) {
@@ -93,8 +111,8 @@ int main(void)
 
       //permute
       if(count % 50 == 0) {
-         for(y = 0; y < 4; y++) {
-            for(x = 0; x < 12; x++) {
+         for(x = 0; x < 4; x++) {
+            for(y = 0; y < 12; y++) {
                c.h = off;
                led_DrawPixel(x, y, &c);
             }
