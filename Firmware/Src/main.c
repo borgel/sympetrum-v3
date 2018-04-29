@@ -97,39 +97,6 @@ int main(void)
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
 
-   //FIXME rm
-   //led_ClearDisplay();
-   //led_DrawPixel(0, 0, &c);
-   //while(1);
-
-   //FIXME rm
-   int row, col;
-   //struct color_ColorHSV black = {.h = 0, .s = 0, .v = 0};
-   c.h = HSV_COLOR_R;
-
-   iprintf("Fill display red forever\n");
-   //bank, LED
-   led_DrawPixel(0, 0, &c);
-   //led_DrawPixel(0, 1, &c);
-   //led_DrawPixel(0, 2, &c);
-   //led_DrawPixel(0, 3, &c);
-   //led_DrawPixel(0, 4, &c);
-
-   while(1);
-
-   while(true) {
-      for(row = 0; row < 4; row++) {
-         for(col = 0; col < 12; col++) {
-            //iprintf("[%d,%d]\n", row, col);
-
-            //led_ClearDisplay();
-            led_DrawPixel(row, col, &c);
-
-            //HAL_Delay(500);
-         }
-      }
-   }
-
    int x, y;
    int count = 0;
    uint8_t off = 0;
