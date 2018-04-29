@@ -108,19 +108,15 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
-      //FIXME rework with new raw matrix
    //FIXME rm this?
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
-      //struct color_ColorRGB * const mRaw = &matrixRaw[m->bank][m->ch];
-      //struct color_ColorRGB * const mRaw = &matrixRaw[m->row][m->col];
-
       // set the pointers in matrixMapped to point to the correct elements in
       // the matrixRaw below it
 
       //FIXME rm
-      iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
+      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
 
       switch(m->color) {
          case MMC_RED:
@@ -189,36 +185,13 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //disregard the V that was passed in and use global brightness
    color->v = matrixState.brightness;
 
-   //FIXME do this faster
+   //FIXME do this more elegantly?
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
 
-   /*
    *matrixMapped[x][y].r = rgb.r;
    *matrixMapped[x][y].g = rgb.g;
    *matrixMapped[x][y].b = rgb.b;
-   */
-
-   //FIXME redo with new raw matrix
-
-   /*
-   int target = 3 * ((x * MATRIX_COLS) + y);
-   iprintf("target = %d\n", target);
-
-   struct matrixMap const * const mr = &MatrixMap[target + 0];
-   struct matrixMap const * const mg = &MatrixMap[target + 1];
-   struct matrixMap const * const mb = &MatrixMap[target + 2];
-
-   //FIXME rm
-   if(x == 0 && y == 0) {
-      iprintf("Target .r @ 0x%x\n", matrixMapped[x][y].r);
-      iprintf("bank = %d, ch = %d\n", mr->bank, mr->ch);
-   }
-
-   matrixRaw[mr->bank][mr->ch].r = rgb.r;
-   matrixRaw[mg->bank][mg->ch].g = rgb.g;
-   matrixRaw[mb->bank][mb->ch].b = rgb.b;
-   */
 }
 
 // call to complete an entire draw cycle immediately
@@ -342,47 +315,6 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    *matrixMapped[x][y].r = color->r;
    *matrixMapped[x][y].g = color->g;
    *matrixMapped[x][y].b = color->b;
-
-   //XXX works, it's just all raw
-   /*
-   matrixRaw[x][y].r = color->r;
-   matrixRaw[x][y].g = color->g;
-   matrixRaw[x][y].b = color->b;
-   */
-
-   /*
-   int target = 3 * ((x * MATRIX_COLS) + y);
-   iprintf("target in mapper = %d\n", target);
-
-   struct matrixMap const * const mr = &MatrixMap[target + 0];
-   struct matrixMap const * const mg = &MatrixMap[target + 1];
-   struct matrixMap const * const mb = &MatrixMap[target + 2];
-
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mr->bank, mr->ch, mr->col, mr->color);
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mg->bank, mg->ch, mg->col, mg->color);
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mb->bank, mb->ch, mb->col, mb->color);
-
-   matrixRaw[mr->row][mr->col].r = color->r;
-   matrixRaw[mg->row][mg->col].g = color->g;
-   matrixRaw[mb->row][mb->col].b = color->b;
-   */
-
-   /*
-   int target = 3 * ((x * MATRIX_COLS) + y);
-   iprintf("target in mapper = %d\n", target);
-
-   struct matrixMap const * const mr = &MatrixMap[target + 0];
-   struct matrixMap const * const mg = &MatrixMap[target + 1];
-   struct matrixMap const * const mb = &MatrixMap[target + 2];
-
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mr->bank, mr->ch, mr->col, mr->color);
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mg->bank, mg->ch, mg->col, mg->color);
-   iprintf("bank = %d, ch = %d colm = %d, c = %d\n", mb->bank, mb->ch, mb->col, mb->color);
-
-   matrixRaw[mr->bank][mr->ch] = color->r;
-   matrixRaw[mg->bank][mg->ch] = color->g;
-   matrixRaw[mb->bank][mb->ch] = color->b;
-   */
 }
 
 static bool _WriteRow(int rowIndex) {
