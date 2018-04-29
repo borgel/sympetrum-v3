@@ -70,18 +70,15 @@ struct ColorPointer {
 
 // the underlying in-memory version of the entire matrix, including a fifth row of solid black
 // for blanking.
-// Remember this is in 3 byte RGB groups (so it's 4 x 12 (it's tall)
-// 4 arrays of 12 long
-//                                           x              y
-//TODO re-define as banks and channels? Would make it more clear what this is
-//static struct color_ColorRGB matrixRaw[LED_BANKS + 1][LED_CHANNELS / LED_CHANNELS_PER_LED];
+// 4 arrays of 36 bytes long. Physical LEDs divide into groups of 3
+//                           x              y
 static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 
 // static LUT for controlling matrix row FETs
-static uint16_t const MatrixPinLUT[] =     {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
-static GPIO_TypeDef * const MatrixPortLUT[] = {GPIOA, GPIOB, GPIOB, GPIOB};
+static uint16_t const MatrixPinLUT[]         = {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
+static GPIO_TypeDef * const MatrixPortLUT[]  = {GPIOA, GPIOB, GPIOB, GPIOB};
 
 static void _ConfigureLEDController(void);
 static void _ConfigureFrameClock(void);
@@ -108,7 +105,6 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
-   //FIXME rm this?
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
@@ -177,7 +173,7 @@ void led_Resume(void) {
 
 // Update the in-memory matrix representation
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
-   if(x > MATRIX_ROWS || y > MATRIX_COLS) {
+   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
@@ -305,13 +301,12 @@ void led_TestExEnableBank(enum led_TestBankID bank) {
 }
 
 void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
-   // base 0
+   // base 0, so if there are 3 rows valid indicies are 0, 1, 2. Asking for 3 is too many
    if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
-   //might work, but disable for now
    *matrixMapped[x][y].r = color->r;
    *matrixMapped[x][y].g = color->g;
    *matrixMapped[x][y].b = color->b;
