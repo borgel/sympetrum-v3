@@ -91,8 +91,9 @@ int main(void)
 
    //FIXME rm?
    uint32_t lux;
-   als_GetLux(&lux);
-   led_SetGlobalBrightness(60 + (lux / 10));
+   //als_GetLux(&lux);
+   //led_SetGlobalBrightness(60 + (lux / 10));
+   led_SetGlobalBrightness(255);
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
@@ -133,7 +134,6 @@ int main(void)
             led_SetGlobalBrightness(60 + (lux / 10));
          }
 
-         //iprintf("counts = %d\n", lux);
          //testDarknetIR();
       }
       count++;

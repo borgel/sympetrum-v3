@@ -105,6 +105,9 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
+   //TODO is this max?
+   matrixState.brightness = 255;
+
    iprintf("Setting up matrix interposer...\n");
    for(int i = 0; i < TOTAL_CHANNELS; i++) {
       struct matrixMap const * const m = &MatrixMap[i];
@@ -139,9 +142,6 @@ void _ConfigureLEDController(void) {
    // set enable bit and scalar on all channels
    for(int i = 0; i < LED_CHANNELS; i++) {
       _EnableChannel(i, DIVISOR_4);
-
-      //FIXME rm
-      //_EnableChannel(i, DIVISOR_NONE);
    }
 
    _ForceUpdateRow();
