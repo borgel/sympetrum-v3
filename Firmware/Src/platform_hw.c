@@ -176,7 +176,7 @@ static void MX_GPIO_Init(void)
    __HAL_RCC_GPIOB_CLK_ENABLE();
 
    // configure LED matrix control lines
-   GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_8;
+   GPIO_InitStruct.Pin = GPIO_PIN_8;
    //FIXME pull low, float high?
    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
    GPIO_InitStruct.Pull = GPIO_NOPULL;
@@ -207,7 +207,7 @@ static void MX_GPIO_Init(void)
    HAL_GPIO_Init(POWER_EN_PORT, &GPIO_InitStruct);
 
    // setup diagnostic testpoints
-   GPIO_InitStruct.Pin = TP_A15_PIN;
+   GPIO_InitStruct.Pin = TP_A5_PIN | TP_A15_PIN;
    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
    GPIO_InitStruct.Pull = GPIO_PULLUP;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
