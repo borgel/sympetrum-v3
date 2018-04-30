@@ -22,10 +22,14 @@
 union Interrupts {
    uint32_t mask;
    struct {
+      //FIXME update with real peripherals
       uint8_t     accelerometer  : 1;
       uint8_t     charger        : 1;
    };
 };
+
+// indicate if we are in test mode
+static bool TestMode = false;
 
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
@@ -72,10 +76,13 @@ int main(void)
 
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
+      TestMode = true;
+
       // this should never return
       //FIXME en
       test_DoTests();
    }
+   TestMode = false;
 
    //FIXME mv? into LED?
    als_Init();
@@ -149,5 +156,11 @@ int main(void)
 
 void main_DoButton(bool const buttonPressed) {
    iprintf("Button to %d\n", buttonPressed);
+
+   if(TestMode) {
+      test_UserButton(buttonPressed);
+   }
+   else {
+   }
 }
 
