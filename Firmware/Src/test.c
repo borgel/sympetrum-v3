@@ -112,6 +112,7 @@ static bool _TestIRTXRX(void) {
       }
       else {
          iprintf("F");
+         iprintf("[%d,%d] ", firstState, secondState);
       }
    }
 
@@ -169,6 +170,18 @@ static void _TestLEDs(void) {
 
 void test_DoTests(void) {
    iprintf("Starting Self Tests...\n");
+
+   //FIXME rm
+   __HAL_RCC_GPIOA_CLK_ENABLE();
+   GPIO_InitTypeDef GPIO_InitStruct;
+   // IR Receive GPIO configuration
+   GPIO_InitStruct.Pin = IR_TX_Pin;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
+   HAL_GPIO_Init(IR_TX_Port, &GPIO_InitStruct);
+   HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_SET);
+   iprintf("done with pin test config\n");
+   while(1);
 
    // test init
    ir_TestInit();
