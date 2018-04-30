@@ -183,11 +183,16 @@ void test_DoTests(void) {
       }
 
       if(!_TestIRTXRX()) {
-         _HandleTestFail();
+         //FIXME en
+         //_HandleTestFail();
       }
+
+      //FIXME rm
+      continue;
 
       HAL_Delay(INTER_TEST_DELAY_MS);
 
+      //FIXME re-order
       _TestLEDs();
 
       HAL_Delay(INTER_TEST_DELAY_MS);
