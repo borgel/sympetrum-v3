@@ -265,6 +265,7 @@ void IRStop() {
 void ir_TestInit() {
    GPIO_InitTypeDef GPIO_InitStruct;
 
+   //TODO abstract this
    // IR Receive GPIO configuration
    GPIO_InitStruct.Pin = IR_RX_Pin;
    GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;

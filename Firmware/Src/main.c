@@ -74,7 +74,7 @@ int main(void)
    if(test_EnterTestMode()) {
       // this should never return
       //FIXME en
-      //test_DoTests();
+      test_DoTests();
    }
 
    //FIXME mv? into LED?
@@ -122,10 +122,14 @@ int main(void)
       }
 
       //FIXME rm
-      if(count > 8000) {
+      if(count > 4000) {
          count = 0;
 
          als_GetLux(&lux);
+
+         iprintf("Light Counts = %d\n", lux);
+
+         /*
          //calculate the brightness to set
          if(60 + (lux / 10) > 255) {
             led_SetGlobalBrightness(255);
@@ -133,6 +137,7 @@ int main(void)
          else {
             led_SetGlobalBrightness(60 + (lux / 10));
          }
+         */
 
          //testDarknetIR();
       }
