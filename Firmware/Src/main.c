@@ -142,3 +142,7 @@ int main(void)
    return 0;
 }
 
+void main_DoButton(bool const buttonPressed) {
+   iprintf("Button to %d\n", buttonPressed);
+}
+

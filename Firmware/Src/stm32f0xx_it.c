@@ -33,7 +33,10 @@ void SysTick_Handler(void)
 void EXTI0_1_IRQHandler(void) {
    if(__HAL_GPIO_EXTI_GET_IT(USER_BUTTON_PIN)) {
       __HAL_GPIO_EXTI_CLEAR_IT(USER_BUTTON_PIN);
-      iprintf("user\n");
+
+      // low is pressed
+      GPIO_PinState ps = HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN);
+      main_DoButton(ps == GPIO_PIN_RESET);
    }
 }
 
