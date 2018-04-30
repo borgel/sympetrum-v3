@@ -83,7 +83,7 @@ static GPIO_PinState _getModeIRPinState(int const samples, unsigned delayMS) {
    return GPIO_PIN_RESET;
 }
 
-static bool _TestIRTXRX(void) {
+static bool _TestIRTXRX(void * param) {
    /*
       sample RX for 50 samples at 1?ms, take mode state (on or off)
       randomly turn IR TX on or off
@@ -139,6 +139,16 @@ static bool _TestIRTXRX(void) {
    return false;
 }
 
+static void _ShowColorOnBank(struct color_ColorRGB * c, int bank) {
+   led_TestExEnableBank(bank);
+
+   for(int led = 0; led < MATRIX_COLS; led++) {
+      led_TestDrawPixel(bank, led, c);
+   }
+   led_TestRefresh(bank);
+}
+
+/*
 // show the given color on all displays rows sequentially
 static void _ShowColorOnRows(struct color_ColorRGB * c) {
    struct color_ColorRGB black = {0};
@@ -177,6 +187,54 @@ static void _TestLEDs(void) {
    _ShowColorOnRows(&b);
    iprintf("\n");
 }
+*/
+
+static bool _TestLED_R(void* param) {
+   struct color_ColorRGB r = {.r = 255};
+   _ShowColorOnBank(&r, (int)param);
+   // can't fail
+   return true;
+}
+static bool _TestLED_G(void* param) {
+   struct color_ColorRGB g = {.g = 255};
+   _ShowColorOnBank(&g, (int)param);
+   // can't fail
+   return true;
+}
+static bool _TestLED_B(void* param) {
+   struct color_ColorRGB b = {.b = 255};
+   _ShowColorOnBank(&b, (int)param);
+   // can't fail
+   return true;
+}
+
+//FIXME move?
+typedef bool (*TestFunction)(void * param);
+struct TestPlanItem {
+   TestFunction func;
+   void * param;
+};
+static struct TestPlanItem const TestPlan[] = {
+   //TODO there's gotta be a better way to do this
+   { _TestIRTXRX, NULL},
+
+   // for LEDs, pass in the bank
+   { _TestLED_R, (void*)0},
+   { _TestLED_R, (void*)1},
+   { _TestLED_R, (void*)2},
+   { _TestLED_R, (void*)3},
+
+   { _TestLED_G, (void*)0},
+   { _TestLED_G, (void*)1},
+   { _TestLED_G, (void*)2},
+   { _TestLED_G, (void*)3},
+
+   { _TestLED_B, (void*)0},
+   { _TestLED_B, (void*)1},
+   { _TestLED_B, (void*)2},
+   { _TestLED_B, (void*)3},
+};
+static int currentItem = 0;
 
 void test_DoTests(void) {
    iprintf("Starting Self Tests...\n");
@@ -185,13 +243,35 @@ void test_DoTests(void) {
    ir_TestInit();
    led_TestInit();
 
-   //FIXME rm?
-   led_SetGlobalBrightness(255);
+   // start the 0th test by default
+   currentItem = 0;
+   TestPlan[currentItem].func(TestPlan[currentItem].param);
+   currentItem++;
 
    while(true) {
-      if(!_TestButtons()) {
-         _HandleTestFail();
+      //TODO check entire mask?
+      if(events.userButton) {
+         events.userButton = 0;
+
+         //TODO light test in progress light?
+
+         bool result = TestPlan[currentItem].func(TestPlan[currentItem].param);
+         if(result == true) {
+            iprintf("Test Pass\n");
+            //TODO show success on fixture LEDs
+         }
+         else {
+            iprintf("Test Fail\n");
+            //TODO show failure
+         }
+
+         currentItem++;
+         if(currentItem > (sizeof(TestPlan) / sizeof(TestPlan[0]))) {
+            currentItem = 0;
+         }
       }
+   }
+}
 
 // handle a button press from main
 void test_UserButton(bool const buttonPressed) {
@@ -200,7 +280,23 @@ void test_UserButton(bool const buttonPressed) {
    }
 }
 
+/*
+ * FIXME rm?
+ * what does failing really mean? we probably don't actually want to hang
 static void _HandleTestFail(void) {
    iprintf("Terminal test failure\n");
    while(true) {}
 }
+*/
+
+/*
+static void _SampleTP(GPIOTypeDef port, uint32_t pin) {
+   // sample state?
+   // de-init (see HAL MSP)
+   // configure for input
+   // sample
+   // re-configure for output
+   // set state to original
+}
+*/
+
