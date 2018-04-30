@@ -20,6 +20,17 @@
 
 #define INTER_TEST_DELAY_MS      (2000)
 
+union Interrupts {
+   uint32_t mask;
+   struct {
+      uint8_t     userButton  : 1;
+      uint8_t     tpA5        : 1;
+      uint8_t     tpA15       : 1;
+      uint8_t     tpB8        : 1;
+   };
+};
+union Interrupts events = {0};
+
 static void _HandleTestFail(void);
 
 // check if we should enter test mode
@@ -182,20 +193,10 @@ void test_DoTests(void) {
          _HandleTestFail();
       }
 
-      if(!_TestIRTXRX()) {
-         //FIXME en
-         //_HandleTestFail();
-      }
-
-      //FIXME rm
-      continue;
-
-      HAL_Delay(INTER_TEST_DELAY_MS);
-
-      //FIXME re-order
-      _TestLEDs();
-
-      HAL_Delay(INTER_TEST_DELAY_MS);
+// handle a button press from main
+void test_UserButton(bool const buttonPressed) {
+   if(!buttonPressed) {
+      events.userButton = 1;
    }
 }
 
