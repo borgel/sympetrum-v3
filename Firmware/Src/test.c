@@ -20,11 +20,18 @@
 
 #define INTER_TEST_DELAY_MS      (2000)
 
-enum TestPoints {
-   TP_A5,
-   TP_A15,
-   TP_B8
+enum TestStatusLED {
+   // no LEDs
+   TS_NONE,
+   // both LEDs
+   TS_READY,
+   // green (A5)
+   TS_FAIL,
+   // fail (A15)
+   TS_PASS,
 };
+#define TP_ID_FAIL         (TP_A15)
+#define TP_ID_PASS         (TP_A5)
 
 union Interrupts {
    uint32_t mask;
@@ -37,6 +44,8 @@ union Interrupts {
 };
 union Interrupts events = {0};
 
+
+static void _SetTestStatusLEDs(enum TestStatusLED stat);
 static void _SetTestpoint(enum TestPoints tp, bool set);
 static bool _GetTestpoint(enum TestPoints tp);
 
@@ -220,7 +229,8 @@ static bool _ResetState(void* param) {
    struct color_ColorRGB c = {.r = 0, .g = 0, .b = 0};
    _ShowColorOnBank(&c, 0);
 
-   //TODO set TPs to default
+   // use test LEDs to show we are idle/ready
+   _SetTestStatusLEDs(TS_READY);
 
    return true;
 }
@@ -352,6 +362,36 @@ static void _SampleTP(GPIOTypeDef port, uint32_t pin) {
    // set state to original
 }
 */
+
+static void _SetTestStatusLEDs(enum TestStatusLED stat) {
+   bool passLED;
+   bool failLED;
+
+   switch(stat) {
+      case TS_NONE:
+         passLED = false;
+         failLED = true;
+         break;
+
+      case TS_READY:
+         passLED = true;
+         failLED = true;
+         break;
+
+      case TS_PASS:
+         passLED = true;
+         failLED = false;
+         break;
+
+      case TS_FAIL:
+         passLED = false;
+         failLED = true;
+         break;
+   }
+
+   _SetTestpoint(TP_ID_PASS, passLED);
+   _SetTestpoint(TP_ID_FAIL, failLED);
+}
 
 // Set the given TP to the given level
 static void _SetTestpoint(enum TestPoints tp, bool set) {
