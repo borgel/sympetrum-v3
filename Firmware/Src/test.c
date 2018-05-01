@@ -20,12 +20,50 @@
 
 #define INTER_TEST_DELAY_MS      (2000)
 
-static void _HandleTestFail(void);
+enum TestStatusLED {
+   // no LEDs
+   TS_NONE,
+   // both LEDs
+   TS_READY,
+   // green (A5)
+   TS_FAIL,
+   // fail (A15)
+   TS_PASS,
+};
+#define TP_ID_FAIL         (TP_A15)
+#define TP_ID_PASS         (TP_A5)
+
+union Interrupts {
+   uint32_t mask;
+   struct {
+      uint8_t     userButton  : 1;
+      uint8_t     tpA5        : 1;
+      uint8_t     tpA15       : 1;
+      uint8_t     tpB8        : 1;
+   };
+};
+union Interrupts events = {0};
+
+typedef bool (*TestFunction)(void * param);
+struct TestPlanItem {
+   TestFunction func;
+
+   // if the next item should run automatically after this
+   bool passthrough;
+
+   void * param;
+};
+
+static bool TestModeActive = false;
+
+static void _SetTestStatusLEDs(enum TestStatusLED stat);
+static void _SetTestpoint(enum TestPoints tp, bool set);
+static bool _GetTestpoint(enum TestPoints tp);
 
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
-   const uint8_t b8 = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
-   const uint8_t a15 = HAL_GPIO_ReadPin(TP_A15_PORT, TP_A15_PIN);
+   const bool b8 = _GetTestpoint(TP_B8);
+   const bool a15 = _GetTestpoint(TP_A15);
 
    //FIXME rm, short on for now
    return true;
@@ -33,7 +71,7 @@ bool test_EnterTestMode(void) {
 
 
    // strap b8 high and a15 low
-   if(b8 == GPIO_PIN_SET && a15 == GPIO_PIN_RESET) {
+   if(b8 && a15) {
       return true;
    }
    return false;
@@ -72,7 +110,7 @@ static GPIO_PinState _getModeIRPinState(int const samples, unsigned delayMS) {
    return GPIO_PIN_RESET;
 }
 
-static bool _TestIRTXRX(void) {
+static bool _TestIRTXRX(void * param) {
    /*
       sample RX for 50 samples at 1?ms, take mode state (on or off)
       randomly turn IR TX on or off
@@ -128,6 +166,16 @@ static bool _TestIRTXRX(void) {
    return false;
 }
 
+static void _ShowColorOnBank(struct color_ColorRGB * c, int bank) {
+   led_TestExEnableBank(bank);
+
+   for(int led = 0; led < MATRIX_COLS; led++) {
+      led_TestDrawPixel(bank, led, c);
+   }
+   led_TestRefresh(bank);
+}
+
+/*
 // show the given color on all displays rows sequentially
 static void _ShowColorOnRows(struct color_ColorRGB * c) {
    struct color_ColorRGB black = {0};
@@ -166,35 +214,218 @@ static void _TestLEDs(void) {
    _ShowColorOnRows(&b);
    iprintf("\n");
 }
+*/
+
+static bool _TestLED_R(void* param) {
+   struct color_ColorRGB r = {.r = 255};
+   _ShowColorOnBank(&r, (int)param);
+   // can't fail
+   return true;
+}
+static bool _TestLED_G(void* param) {
+   struct color_ColorRGB g = {.g = 255};
+   _ShowColorOnBank(&g, (int)param);
+   // can't fail
+   return true;
+}
+static bool _TestLED_B(void* param) {
+   struct color_ColorRGB b = {.b = 255};
+   _ShowColorOnBank(&b, (int)param);
+   // can't fail
+   return true;
+}
+
+static bool _ResetState(void* param) {
+   // disable all LEDs
+   struct color_ColorRGB c = {.r = 0, .g = 0, .b = 0};
+   _ShowColorOnBank(&c, 0);
+
+   // use test LEDs to show we are idle/ready
+   _SetTestStatusLEDs(TS_READY);
+
+   return true;
+}
+
+static struct TestPlanItem const TestPlan[] = {
+   { _ResetState, false, NULL},
+
+   //TODO there's gotta be a better way to do this
+   { _TestIRTXRX, false, NULL},
+
+   // for LEDs, pass in the bank
+   { _TestLED_R, false, (void*)0},
+   { _TestLED_R, false, (void*)1},
+   { _TestLED_R, false, (void*)2},
+   { _TestLED_R, false, (void*)3},
+
+   { _TestLED_G, false, (void*)0},
+   { _TestLED_G, false, (void*)1},
+   { _TestLED_G, false, (void*)2},
+   { _TestLED_G, false, (void*)3},
+
+   { _TestLED_B, false, (void*)0},
+   { _TestLED_B, false, (void*)1},
+   { _TestLED_B, false, (void*)2},
+   { _TestLED_B, false, (void*)3},
+};
+static int currentItem = 0;
 
 void test_DoTests(void) {
-   iprintf("Starting Self Tests...\n");
+   // mark us as having entered test mode
+   TestModeActive = true;
+
+   static int const TestPlanSize = sizeof(TestPlan) / sizeof(TestPlan[0]);
+   iprintf("Starting %d Self Tests...\n", TestPlanSize);
 
    // test init
    ir_TestInit();
    led_TestInit();
 
-   //FIXME rm?
-   led_SetGlobalBrightness(255);
+   // start the 0th test by default
+   currentItem = 0;
+
+   bool testResult;
+   bool lastTestWasPassthrough = false;
+   int completedTestplanIterations = 0;
+
+   // if first test is passthrough, run it
+   lastTestWasPassthrough = TestPlan[currentItem].passthrough;
 
    while(true) {
-      if(!_TestButtons()) {
-         _HandleTestFail();
+      if(events.mask || lastTestWasPassthrough) {
+         if(events.userButton) {
+            events.userButton = 0;
+         }
+         else if(events.tpB8) {
+            events.tpB8 = 0;
+         }
+
+         //FIXME do none?
+         _SetTestStatusLEDs(TS_READY);
+
+         testResult = TestPlan[currentItem].func(TestPlan[currentItem].param);
+         if(testResult == true) {
+            iprintf("Test Pass\n");
+            _SetTestStatusLEDs(TS_PASS);
+         }
+         else {
+            iprintf("Test Fail\n");
+            _SetTestStatusLEDs(TS_FAIL);
+         }
+
+         // track if the next test should run automatically
+         lastTestWasPassthrough = TestPlan[currentItem].passthrough;
+         if(lastTestWasPassthrough) {
+            iprintf("Passthrough\n");
+         }
+
+         currentItem++;
+         if(currentItem >= TestPlanSize) {
+            currentItem = 0;
+
+            completedTestplanIterations++;
+
+            iprintf("Completed %d test plan iterations\n", completedTestplanIterations);
+         }
       }
 
-      if(!_TestIRTXRX()) {
-         _HandleTestFail();
-      }
-
-      HAL_Delay(INTER_TEST_DELAY_MS);
-
-      _TestLEDs();
-
-      HAL_Delay(INTER_TEST_DELAY_MS);
+      //TODO on one complete cycle, terminate?
    }
 }
 
-static void _HandleTestFail(void) {
-   iprintf("Terminal test failure\n");
-   while(true) {}
+// handle a button press from main
+void test_UserButton(bool const buttonPressed) {
+   if(!TestModeActive) {
+      return;
+   }
+
+   // falling edge
+   if(!buttonPressed) {
+      events.userButton = 1;
+   }
 }
+
+// handle a TP button press
+void test_DoTPButton(enum TestPoints tp, bool const buttonPressed) {
+   if(!TestModeActive) {
+      return;
+   }
+
+   switch(tp) {
+      case TP_B8:
+         // rising edge
+         if(buttonPressed) {
+            iprintf("B8\n");
+            events.tpB8 = 1;
+         }
+         break;
+
+      case TP_A5:
+      case TP_A15:
+      default:
+         break;
+   }
+}
+
+static void _SetTestStatusLEDs(enum TestStatusLED stat) {
+   bool passLED;
+   bool failLED;
+
+   switch(stat) {
+      case TS_NONE:
+         passLED = false;
+         failLED = true;
+         break;
+
+      case TS_READY:
+         passLED = true;
+         failLED = true;
+         break;
+
+      case TS_PASS:
+         passLED = true;
+         failLED = false;
+         break;
+
+      case TS_FAIL:
+         passLED = false;
+         failLED = true;
+         break;
+   }
+
+   _SetTestpoint(TP_ID_PASS, passLED);
+   _SetTestpoint(TP_ID_FAIL, failLED);
+}
+
+// Set the given TP to the given level
+static void _SetTestpoint(enum TestPoints tp, bool set) {
+   switch(tp) {
+      case TP_A5:
+         HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+
+      case TP_A15:
+         HAL_GPIO_WritePin(TP_A15_PORT, TP_A15_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+
+      case TP_B8:
+         HAL_GPIO_WritePin(TP_B8_PORT, TP_B8_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+   }
+}
+
+static bool _GetTestpoint(enum TestPoints tp) {
+   switch(tp) {
+      case TP_A5:
+         return HAL_GPIO_ReadPin(TP_A5_PORT, TP_A5_PIN) == GPIO_PIN_SET;
+
+      case TP_A15:
+         return HAL_GPIO_ReadPin(TP_A15_PORT, TP_A15_PIN) == GPIO_PIN_SET;
+
+      case TP_B8:
+         return HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN) == GPIO_PIN_SET;
+   }
+   // should never run
+   return false;
+}
+

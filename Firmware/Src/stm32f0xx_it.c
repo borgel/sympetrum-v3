@@ -9,6 +9,7 @@
 
 #include "platform_hw.h"
 #include "led.h"
+#include "test.h"
 
 #include "main.h"
 #include "iprintf.h"
@@ -33,12 +34,23 @@ void SysTick_Handler(void)
 void EXTI0_1_IRQHandler(void) {
    if(__HAL_GPIO_EXTI_GET_IT(USER_BUTTON_PIN)) {
       __HAL_GPIO_EXTI_CLEAR_IT(USER_BUTTON_PIN);
-      iprintf("user\n");
+
+      // low is pressed
+      GPIO_PinState ps = HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN);
+      main_DoButton(ps == GPIO_PIN_RESET);
    }
 }
 
 // Handle things on pins 4-15
 void EXTI4_15_IRQHandler(void) {
+   if(__HAL_GPIO_EXTI_GET_IT(TP_B8_PIN)) {
+      __HAL_GPIO_EXTI_CLEAR_IT(TP_B8_PIN);
+
+      // low is pressed
+      GPIO_PinState ps = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
+
+      test_DoTPButton(TP_B8, ps == GPIO_PIN_SET);
+   }
 }
 
 
@@ -61,12 +73,12 @@ void TIM14_IRQHandler(void) {
    __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
 
    //FIXME rm? Just toggled to test matrix draw time
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+   HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, GPIO_PIN_SET);
 
    led_UpdateDisplay();
 
    //FIXME rm
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+   HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, GPIO_PIN_RESET);
 }
 
 // Handle events on pins 0-1

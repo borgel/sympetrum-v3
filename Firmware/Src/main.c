@@ -22,10 +22,14 @@
 union Interrupts {
    uint32_t mask;
    struct {
+      //FIXME update with real peripherals
       uint8_t     accelerometer  : 1;
       uint8_t     charger        : 1;
    };
 };
+
+// indicate if we are in test mode
+static bool TestMode = false;
 
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
@@ -72,10 +76,12 @@ int main(void)
 
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
+      TestMode = true;
+
       // this should never return
-      //FIXME en
-      //test_DoTests();
+      test_DoTests();
    }
+   TestMode = false;
 
    //FIXME mv? into LED?
    als_Init();
@@ -91,8 +97,7 @@ int main(void)
 
    //FIXME rm?
    uint32_t lux;
-   als_GetLux(&lux);
-   led_SetGlobalBrightness(60 + (lux / 10));
+   led_SetGlobalBrightness(255);
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
@@ -121,10 +126,14 @@ int main(void)
       }
 
       //FIXME rm
-      if(count > 8000) {
+      if(count > 4000) {
          count = 0;
 
          als_GetLux(&lux);
+
+         iprintf("Light Counts = %d\n", lux);
+
+         /*
          //calculate the brightness to set
          if(60 + (lux / 10) > 255) {
             led_SetGlobalBrightness(255);
@@ -132,13 +141,23 @@ int main(void)
          else {
             led_SetGlobalBrightness(60 + (lux / 10));
          }
+         */
 
-         //iprintf("counts = %d\n", lux);
          //testDarknetIR();
       }
       count++;
    }
 
    return 0;
+}
+
+void main_DoButton(bool const buttonPressed) {
+   iprintf("Button to %d\n", buttonPressed);
+
+   if(TestMode) {
+      test_UserButton(buttonPressed);
+   }
+   else {
+   }
 }
 
