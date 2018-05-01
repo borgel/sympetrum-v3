@@ -79,7 +79,6 @@ int main(void)
       TestMode = true;
 
       // this should never return
-      //FIXME en
       test_DoTests();
    }
    TestMode = false;
@@ -98,8 +97,6 @@ int main(void)
 
    //FIXME rm?
    uint32_t lux;
-   //als_GetLux(&lux);
-   //led_SetGlobalBrightness(60 + (lux / 10));
    led_SetGlobalBrightness(255);
 
    //FIXME move

@@ -159,7 +159,7 @@ static void MX_I2C1_Init(void)
       Error_Handler();
    }
 
-   /**Configure Analogue filter 
+   /**Configure Analogue filter
     */
    if (HAL_I2CEx_ConfigAnalogFilter(&hi2c1, I2C_ANALOGFILTER_ENABLE) != HAL_OK)
    {
@@ -219,7 +219,7 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(TP_B8_PORT, &GPIO_InitStruct);
 
-   // EXTI5_15 used for TP B8
+   // EXTI4_15 used for TP B8
    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 }

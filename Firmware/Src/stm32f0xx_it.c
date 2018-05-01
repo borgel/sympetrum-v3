@@ -49,7 +49,6 @@ void EXTI4_15_IRQHandler(void) {
       // low is pressed
       GPIO_PinState ps = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
 
-      iprintf("B8\n");
       test_DoTPButton(TP_B8, ps == GPIO_PIN_SET);
    }
 }

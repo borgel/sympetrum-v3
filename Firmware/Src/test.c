@@ -44,6 +44,16 @@ union Interrupts {
 };
 union Interrupts events = {0};
 
+typedef bool (*TestFunction)(void * param);
+struct TestPlanItem {
+   TestFunction func;
+
+   // if the next item should run automatically after this
+   bool passthrough;
+
+   void * param;
+};
+
 static bool TestModeActive = false;
 
 static void _SetTestStatusLEDs(enum TestStatusLED stat);
@@ -52,8 +62,8 @@ static bool _GetTestpoint(enum TestPoints tp);
 
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
-   const uint8_t b8 = _GetTestpoint(TP_B8);
-   const uint8_t a15 = _GetTestpoint(TP_A15);
+   const bool b8 = _GetTestpoint(TP_B8);
+   const bool a15 = _GetTestpoint(TP_A15);
 
    //FIXME rm, short on for now
    return true;
@@ -236,16 +246,6 @@ static bool _ResetState(void* param) {
    return true;
 }
 
-//FIXME move?
-typedef bool (*TestFunction)(void * param);
-struct TestPlanItem {
-   TestFunction func;
-
-   // if the next item should run automatically after this
-   bool passthrough;
-
-   void * param;
-};
 static struct TestPlanItem const TestPlan[] = {
    { _ResetState, false, NULL},
 
@@ -292,7 +292,6 @@ void test_DoTests(void) {
    lastTestWasPassthrough = TestPlan[currentItem].passthrough;
 
    while(true) {
-      //TODO check entire mask?
       if(events.mask || lastTestWasPassthrough) {
          if(events.userButton) {
             events.userButton = 0;
@@ -356,6 +355,7 @@ void test_DoTPButton(enum TestPoints tp, bool const buttonPressed) {
       case TP_B8:
          // rising edge
          if(buttonPressed) {
+            iprintf("B8\n");
             events.tpB8 = 1;
          }
          break;
@@ -366,17 +366,6 @@ void test_DoTPButton(enum TestPoints tp, bool const buttonPressed) {
          break;
    }
 }
-
-/*
-static void _SampleTP(GPIOTypeDef port, uint32_t pin) {
-   // sample state?
-   // de-init (see HAL MSP)
-   // configure for input
-   // sample
-   // re-configure for output
-   // set state to original
-}
-*/
 
 static void _SetTestStatusLEDs(enum TestStatusLED stat) {
    bool passLED;
