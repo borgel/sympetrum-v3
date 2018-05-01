@@ -261,7 +261,9 @@ static struct TestPlanItem const TestPlan[] = {
 static int currentItem = 0;
 
 void test_DoTests(void) {
-   iprintf("Starting Self Tests...\n");
+   static int const TestPlanSize = sizeof(TestPlan) / sizeof(TestPlan[0]);
+
+   iprintf("Starting %d Self Tests...\n", TestPlanSize);
 
    // test init
    ir_TestInit();
@@ -274,9 +276,8 @@ void test_DoTests(void) {
 
    // start the 0th test by default
    currentItem = 0;
-   TestPlan[currentItem].func(TestPlan[currentItem].param);
-   currentItem++;
 
+   int completedTestplanIterations = 0;
    while(true) {
       //TODO check entire mask?
       if(events.userButton || TestPlan[currentItem].passthrough) {
@@ -294,11 +295,18 @@ void test_DoTests(void) {
             //TODO show failure
          }
 
+
          currentItem++;
-         if(currentItem > (sizeof(TestPlan) / sizeof(TestPlan[0]))) {
+         if(currentItem >= TestPlanSize) {
             currentItem = 0;
+
+            completedTestplanIterations++;
+
+            iprintf("Completed %d test plan iterations\n", completedTestplanIterations);
          }
       }
+
+      //TODO on one complete cycle, terminate?
    }
 }
 
