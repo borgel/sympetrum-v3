@@ -9,6 +9,7 @@
 
 #include "platform_hw.h"
 #include "led.h"
+#include "test.h"
 
 #include "main.h"
 #include "iprintf.h"
@@ -42,6 +43,15 @@ void EXTI0_1_IRQHandler(void) {
 
 // Handle things on pins 4-15
 void EXTI4_15_IRQHandler(void) {
+   if(__HAL_GPIO_EXTI_GET_IT(TP_B8_PIN)) {
+      __HAL_GPIO_EXTI_CLEAR_IT(TP_B8_PIN);
+
+      // low is pressed
+      GPIO_PinState ps = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
+
+      iprintf("B8\n");
+      test_DoTPButton(TP_B8, ps == GPIO_PIN_SET);
+   }
 }
 
 

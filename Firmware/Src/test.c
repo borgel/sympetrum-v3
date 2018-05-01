@@ -311,11 +311,35 @@ void test_DoTests(void) {
 
 // handle a button press from main
 void test_UserButton(bool const buttonPressed) {
+   if(!TestModeActive) {
+      return;
+   }
+
+   // falling edge
    if(!buttonPressed) {
       events.userButton = 1;
    }
 }
 
+// handle a TP button press
+void test_DoTPButton(enum TestPoints tp, bool const buttonPressed) {
+   if(!TestModeActive) {
+      return;
+   }
+
+   switch(tp) {
+      case TP_B8:
+         // rising edge
+         if(buttonPressed) {
+            events.tpB8 = 1;
+         }
+         break;
+
+      case TP_A5:
+      case TP_A15:
+      default:
+         break;
+   }
 }
 
 /*
