@@ -37,7 +37,6 @@ union Interrupts {
 };
 union Interrupts events = {0};
 
-static void _HandleTestFail(void);
 static void _SetTestpoint(enum TestPoints tp, bool set);
 static bool _GetTestpoint(enum TestPoints tp);
 
@@ -317,14 +316,7 @@ void test_UserButton(bool const buttonPressed) {
    }
 }
 
-/*
- * FIXME rm?
- * what does failing really mean? we probably don't actually want to hang
-static void _HandleTestFail(void) {
-   iprintf("Terminal test failure\n");
-   while(true) {}
 }
-*/
 
 /*
 static void _SampleTP(GPIOTypeDef port, uint32_t pin) {
