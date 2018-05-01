@@ -44,6 +44,7 @@ union Interrupts {
 };
 union Interrupts events = {0};
 
+static bool TestModeActive = false;
 
 static void _SetTestStatusLEDs(enum TestStatusLED stat);
 static void _SetTestpoint(enum TestPoints tp, bool set);
@@ -271,6 +272,8 @@ static int currentItem = 0;
 
 void test_DoTests(void) {
    static int const TestPlanSize = sizeof(TestPlan) / sizeof(TestPlan[0]);
+   // mark us as having entered test mode
+   TestModeActive = true;
 
    iprintf("Starting %d Self Tests...\n", TestPlanSize);
 
