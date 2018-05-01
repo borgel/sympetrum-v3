@@ -220,27 +220,31 @@ static bool _TestLED_B(void* param) {
 typedef bool (*TestFunction)(void * param);
 struct TestPlanItem {
    TestFunction func;
+
+   // if the next item should run automatically after this
+   bool passthrough;
+
    void * param;
 };
 static struct TestPlanItem const TestPlan[] = {
    //TODO there's gotta be a better way to do this
-   { _TestIRTXRX, NULL},
+   { _TestIRTXRX, false, NULL},
 
    // for LEDs, pass in the bank
-   { _TestLED_R, (void*)0},
-   { _TestLED_R, (void*)1},
-   { _TestLED_R, (void*)2},
-   { _TestLED_R, (void*)3},
+   { _TestLED_R, false, (void*)0},
+   { _TestLED_R, false, (void*)1},
+   { _TestLED_R, false, (void*)2},
+   { _TestLED_R, false, (void*)3},
 
-   { _TestLED_G, (void*)0},
-   { _TestLED_G, (void*)1},
-   { _TestLED_G, (void*)2},
-   { _TestLED_G, (void*)3},
+   { _TestLED_G, false, (void*)0},
+   { _TestLED_G, false, (void*)1},
+   { _TestLED_G, false, (void*)2},
+   { _TestLED_G, false, (void*)3},
 
-   { _TestLED_B, (void*)0},
-   { _TestLED_B, (void*)1},
-   { _TestLED_B, (void*)2},
-   { _TestLED_B, (void*)3},
+   { _TestLED_B, false, (void*)0},
+   { _TestLED_B, false, (void*)1},
+   { _TestLED_B, false, (void*)2},
+   { _TestLED_B, false, (void*)3},
 };
 static int currentItem = 0;
 
@@ -263,7 +267,7 @@ void test_DoTests(void) {
 
    while(true) {
       //TODO check entire mask?
-      if(events.userButton) {
+      if(events.userButton || TestPlan[currentItem].passthrough) {
          events.userButton = 0;
 
          //TODO light test in progress light?
