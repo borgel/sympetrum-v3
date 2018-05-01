@@ -39,11 +39,12 @@ union Interrupts events = {0};
 
 static void _HandleTestFail(void);
 static void _SetTestpoint(enum TestPoints tp, bool set);
+static bool _GetTestpoint(enum TestPoints tp);
 
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
-   const uint8_t b8 = HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN);
-   const uint8_t a15 = HAL_GPIO_ReadPin(TP_A15_PORT, TP_A15_PIN);
+   const uint8_t b8 = _GetTestpoint(TP_B8);
+   const uint8_t a15 = _GetTestpoint(TP_A15);
 
    //FIXME rm, short on for now
    return true;
@@ -51,7 +52,7 @@ bool test_EnterTestMode(void) {
 
 
    // strap b8 high and a15 low
-   if(b8 == GPIO_PIN_SET && a15 == GPIO_PIN_RESET) {
+   if(b8 && a15) {
       return true;
    }
    return false;
@@ -327,5 +328,20 @@ static void _SetTestpoint(enum TestPoints tp, bool set) {
          HAL_GPIO_WritePin(TP_B8_PORT, TP_B8_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
          break;
    }
+}
+
+static bool _GetTestpoint(enum TestPoints tp) {
+   switch(tp) {
+      case TP_A5:
+         return HAL_GPIO_ReadPin(TP_A5_PORT, TP_A5_PIN) == GPIO_PIN_SET;
+
+      case TP_A15:
+         return HAL_GPIO_ReadPin(TP_A15_PORT, TP_A15_PIN) == GPIO_PIN_SET;
+
+      case TP_B8:
+         return HAL_GPIO_ReadPin(TP_B8_PORT, TP_B8_PIN) == GPIO_PIN_SET;
+   }
+   // should never run
+   return false;
 }
 
