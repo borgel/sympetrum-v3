@@ -20,6 +20,12 @@
 
 #define INTER_TEST_DELAY_MS      (2000)
 
+enum TestPoints {
+   TP_A5,
+   TP_A15,
+   TP_B8
+};
+
 union Interrupts {
    uint32_t mask;
    struct {
@@ -32,6 +38,7 @@ union Interrupts {
 union Interrupts events = {0};
 
 static void _HandleTestFail(void);
+static void _SetTestpoint(enum TestPoints tp, bool set);
 
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
@@ -243,6 +250,11 @@ void test_DoTests(void) {
    ir_TestInit();
    led_TestInit();
 
+   //FIXME rm
+   _SetTestpoint(TP_A5, true);
+   _SetTestpoint(TP_A15, true);
+   _SetTestpoint(TP_B8, true);
+
    // start the 0th test by default
    currentItem = 0;
    TestPlan[currentItem].func(TestPlan[currentItem].param);
@@ -299,4 +311,21 @@ static void _SampleTP(GPIOTypeDef port, uint32_t pin) {
    // set state to original
 }
 */
+
+// Set the given TP to the given level
+static void _SetTestpoint(enum TestPoints tp, bool set) {
+   switch(tp) {
+      case TP_A5:
+         HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+
+      case TP_A15:
+         HAL_GPIO_WritePin(TP_A15_PORT, TP_A15_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+
+      case TP_B8:
+         HAL_GPIO_WritePin(TP_B8_PORT, TP_B8_PIN, set ? GPIO_PIN_SET : GPIO_PIN_RESET);
+         break;
+   }
+}
 
