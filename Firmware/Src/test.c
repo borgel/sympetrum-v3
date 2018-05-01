@@ -216,6 +216,16 @@ static bool _TestLED_B(void* param) {
    return true;
 }
 
+static bool _ResetState(void* param) {
+   // disable all LEDs
+   struct color_ColorRGB c = {.r = 0, .g = 0, .b = 0};
+   _ShowColorOnBank(&c, 0);
+
+   //TODO set TPs to default
+
+   return true;
+}
+
 //FIXME move?
 typedef bool (*TestFunction)(void * param);
 struct TestPlanItem {
@@ -227,6 +237,8 @@ struct TestPlanItem {
    void * param;
 };
 static struct TestPlanItem const TestPlan[] = {
+   { _ResetState, true, NULL},
+
    //TODO there's gotta be a better way to do this
    { _TestIRTXRX, false, NULL},
 
