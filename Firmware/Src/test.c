@@ -247,7 +247,7 @@ struct TestPlanItem {
    void * param;
 };
 static struct TestPlanItem const TestPlan[] = {
-   { _ResetState, true, NULL},
+   { _ResetState, false, NULL},
 
    //TODO there's gotta be a better way to do this
    { _TestIRTXRX, false, NULL},
@@ -281,15 +281,15 @@ void test_DoTests(void) {
    ir_TestInit();
    led_TestInit();
 
-   //FIXME rm
-   _SetTestpoint(TP_A5, true);
-   _SetTestpoint(TP_A15, true);
-   _SetTestpoint(TP_B8, true);
-
    // start the 0th test by default
    currentItem = 0;
 
+   bool lastTestWasPassthrough = false;
    int completedTestplanIterations = 0;
+
+   // if first test is passthrough, run it
+   lastTestWasPassthrough = TestPlan[currentItem].passthrough;
+
    while(true) {
       //TODO check entire mask?
       if(events.userButton || TestPlan[currentItem].passthrough) {
@@ -307,6 +307,11 @@ void test_DoTests(void) {
             //TODO show failure
          }
 
+         // track if the next test should run automatically
+         lastTestWasPassthrough = TestPlan[currentItem].passthrough;
+         if(lastTestWasPassthrough) {
+            iprintf("Passthrough\n");
+         }
 
          currentItem++;
          if(currentItem >= TestPlanSize) {
