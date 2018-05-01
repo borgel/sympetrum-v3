@@ -171,6 +171,7 @@ static void _TestLEDs(void) {
 void test_DoTests(void) {
    iprintf("Starting Self Tests...\n");
 
+   /*
    //FIXME rm
    __HAL_RCC_GPIOA_CLK_ENABLE();
    GPIO_InitTypeDef GPIO_InitStruct;
@@ -182,6 +183,7 @@ void test_DoTests(void) {
    HAL_GPIO_WritePin(IR_TX_Port, IR_TX_Pin, GPIO_PIN_SET);
    iprintf("done with pin test config\n");
    while(1);
+   */
 
    // test init
    ir_TestInit();
