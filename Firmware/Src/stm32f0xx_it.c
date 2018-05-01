@@ -64,12 +64,12 @@ void TIM14_IRQHandler(void) {
    __HAL_TIM_CLEAR_IT(&htim14, TIM_FLAG_UPDATE);
 
    //FIXME rm? Just toggled to test matrix draw time
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_SET);
+   HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, GPIO_PIN_SET);
 
    led_UpdateDisplay();
 
    //FIXME rm
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, GPIO_PIN_RESET);
+   HAL_GPIO_WritePin(TP_A5_PORT, TP_A5_PIN, GPIO_PIN_RESET);
 }
 
 // Handle events on pins 0-1
