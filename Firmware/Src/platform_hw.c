@@ -208,18 +208,18 @@ static void MX_GPIO_Init(void)
 
    // setup diagnostic testpoints
    GPIO_InitStruct.Pin = TP_A5_PIN | TP_A15_PIN;
-   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(TP_A15_PORT, &GPIO_InitStruct);
 
    GPIO_InitStruct.Pin = TP_B8_PIN;
-   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-   GPIO_InitStruct.Pull = GPIO_PULLUP;
+   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+   GPIO_InitStruct.Pull = GPIO_NOPULL;
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(TP_B8_PORT, &GPIO_InitStruct);
 
-   //FIXME needed?
+   // EXTI5_15 used for TP B8
    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 }
