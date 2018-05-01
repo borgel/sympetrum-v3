@@ -271,10 +271,10 @@ static struct TestPlanItem const TestPlan[] = {
 static int currentItem = 0;
 
 void test_DoTests(void) {
-   static int const TestPlanSize = sizeof(TestPlan) / sizeof(TestPlan[0]);
    // mark us as having entered test mode
    TestModeActive = true;
 
+   static int const TestPlanSize = sizeof(TestPlan) / sizeof(TestPlan[0]);
    iprintf("Starting %d Self Tests...\n", TestPlanSize);
 
    // test init
@@ -284,6 +284,7 @@ void test_DoTests(void) {
    // start the 0th test by default
    currentItem = 0;
 
+   bool testResult;
    bool lastTestWasPassthrough = false;
    int completedTestplanIterations = 0;
 
@@ -292,19 +293,25 @@ void test_DoTests(void) {
 
    while(true) {
       //TODO check entire mask?
-      if(events.userButton || TestPlan[currentItem].passthrough) {
-         events.userButton = 0;
+      if(events.mask || lastTestWasPassthrough) {
+         if(events.userButton) {
+            events.userButton = 0;
+         }
+         else if(events.tpB8) {
+            events.tpB8 = 0;
+         }
 
-         //TODO light test in progress light?
+         //FIXME do none?
+         _SetTestStatusLEDs(TS_READY);
 
-         bool result = TestPlan[currentItem].func(TestPlan[currentItem].param);
-         if(result == true) {
+         testResult = TestPlan[currentItem].func(TestPlan[currentItem].param);
+         if(testResult == true) {
             iprintf("Test Pass\n");
-            //TODO show success on fixture LEDs
+            _SetTestStatusLEDs(TS_PASS);
          }
          else {
             iprintf("Test Fail\n");
-            //TODO show failure
+            _SetTestStatusLEDs(TS_FAIL);
          }
 
          // track if the next test should run automatically
