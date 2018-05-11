@@ -79,7 +79,7 @@ int main(void)
       TestMode = true;
 
       // this should never return
-      test_DoTests();
+      //test_DoTests();
    }
    TestMode = false;
 
@@ -96,15 +96,12 @@ int main(void)
    //iprintf(">> DONE TEST DARKNET IR<<\n");
 
    //FIXME rm?
-   uint32_t lux;
    led_SetGlobalBrightness(255);
 
    //FIXME move
    struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
 
-   int x, y;
    int count = 0;
-   uint8_t off = 0;
    uint32_t bytes = 0;
    while(true) {
       if(IRDataReady()) {
@@ -115,6 +112,7 @@ int main(void)
       }
 
       //permute
+      /*
       if(count % 50 == 0) {
          for(x = 0; x < 4; x++) {
             for(y = 0; y < 12; y++) {
@@ -122,29 +120,20 @@ int main(void)
                led_DrawPixel(x, y, &c);
             }
          }
-         off++;
+      */
       }
 
+      /*
       //FIXME rm
       if(count > 4000) {
          count = 0;
 
+         uint32_t lux;
          als_GetLux(&lux);
 
          iprintf("Light Counts = %d\n", lux);
-
-         /*
-         //calculate the brightness to set
-         if(60 + (lux / 10) > 255) {
-            led_SetGlobalBrightness(255);
-         }
-         else {
-            led_SetGlobalBrightness(60 + (lux / 10));
-         }
-         */
-
-         //testDarknetIR();
       }
+      */
       count++;
    }
 
