@@ -66,6 +66,42 @@ static void fillWhite(void) {
    }
 }
 
+static uint8_t HueTable[] = {0
+};
+
+//FIXME mv/rm
+struct coord {
+   uint8_t x, y;
+};
+//TODO make linear representaiton
+static struct coord const chasingArray[] = {
+   {0, 0},
+   {0, 1},
+   {0, 2},
+   {0, 3},
+   {0, 4},
+   {0, 5},
+   {0, 6},
+   {0, 7},
+   {0, 8},
+   {0, 9},
+   {0, 10},
+   {0, 11},
+
+   {1, 0},
+   {1, 1},
+   {1, 2},
+   {1, 3},
+   {1, 4},
+   {1, 5},
+   {1, 6},
+   {1, 7},
+   {1, 8},
+   {1, 9},
+   {1, 10},
+   {1, 11},
+};
+
 int main(void)
 {
    HAL_Init();
@@ -99,8 +135,12 @@ int main(void)
    led_SetGlobalBrightness(255);
 
    //FIXME move
-   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
+   struct color_ColorHSV color = {.h = 10, .s = 255, .v = 255};
 
+   //FIXME rm
+   int const ChasingSize = sizeof(chasingArray) / sizeof(chasingArray[0]);
+
+   int huePhase = 0;
    int count = 0;
    uint32_t bytes = 0;
    while(true) {
@@ -120,12 +160,23 @@ int main(void)
                led_DrawPixel(x, y, &c);
             }
          }
+      }
       */
+      if(count % 1000) {
+         for(int i = 0; i < ChasingSize; i++) {
+            struct coord const * c = &chasingArray[i];
+            color.h = huePhase + (i * 10);
+            led_DrawPixel(c->x, c->y, &color);
+         }
+      }
+
+      if(count % 9000) {
+         huePhase += 1;
       }
 
       /*
       //FIXME rm
-      if(count > 4000) {
+      if(count > 100) {
          count = 0;
 
          uint32_t lux;
