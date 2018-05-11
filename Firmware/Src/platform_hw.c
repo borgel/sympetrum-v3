@@ -219,6 +219,9 @@ static void MX_GPIO_Init(void)
    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
    HAL_GPIO_Init(TP_B8_PORT, &GPIO_InitStruct);
 
+   //force B8 low
+   HAL_GPIO_WritePin(TP_B8_PORT, TP_B8_PIN, GPIO_PIN_RESET);
+
    // EXTI4_15 used for TP B8
    HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
    HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);

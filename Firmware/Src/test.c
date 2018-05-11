@@ -294,9 +294,11 @@ void test_DoTests(void) {
    while(true) {
       if(events.mask || lastTestWasPassthrough) {
          if(events.userButton) {
+            iprintf("User Button\n");
             events.userButton = 0;
          }
          else if(events.tpB8) {
+            iprintf("B8\n");
             events.tpB8 = 0;
          }
 
@@ -355,7 +357,6 @@ void test_DoTPButton(enum TestPoints tp, bool const buttonPressed) {
       case TP_B8:
          // rising edge
          if(buttonPressed) {
-            iprintf("B8\n");
             events.tpB8 = 1;
          }
          break;
