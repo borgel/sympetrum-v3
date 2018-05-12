@@ -69,39 +69,6 @@ static void fillWhite(void) {
 static uint8_t HueTable[] = {0
 };
 
-//FIXME mv/rm
-struct coord {
-   uint8_t x, y;
-};
-//TODO make linear representaiton
-static struct coord const chasingArray[] = {
-   {0, 0},
-   {0, 1},
-   {0, 2},
-   {0, 3},
-   {0, 4},
-   {0, 5},
-   {0, 6},
-   {0, 7},
-   {0, 8},
-   {0, 9},
-   {0, 10},
-   {0, 11},
-
-   {1, 0},
-   {1, 1},
-   {1, 2},
-   {1, 3},
-   {1, 4},
-   {1, 5},
-   {1, 6},
-   {1, 7},
-   {1, 8},
-   {1, 9},
-   {1, 10},
-   {1, 11},
-};
-
 int main(void)
 {
    HAL_Init();
@@ -136,9 +103,6 @@ int main(void)
 
    //FIXME move
    struct color_ColorHSV color = {.h = 10, .s = 255, .v = 255};
-
-   //FIXME rm
-   int const ChasingSize = sizeof(chasingArray) / sizeof(chasingArray[0]);
 
    int huePhase = 0;
    int count = 0;

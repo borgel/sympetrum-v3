@@ -421,8 +421,6 @@ static void _configureMapping(void) {
       //TODO
    }
 
-   iprintf("Setting up linear...\n");
-
    iprintf("Done\n");
 }
 

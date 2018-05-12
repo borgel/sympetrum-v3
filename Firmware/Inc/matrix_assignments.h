@@ -96,7 +96,7 @@ const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
    {1,  24,	 1,  3,	MMC_RED   ,10},
    {1,  28,	 1,  3,	MMC_GREEN ,10},
    {1,  23,	 1,  3,	MMC_BLUE  ,10},
-   {1,   4,	 1,  4,	MMC_RED   , 4},   //4?
+   {1,   4,	 1,  4,	MMC_RED   , 4},
    {1,   2,	 1,  4,	MMC_GREEN , 4},
    {1,   3,	 1,  4,	MMC_BLUE  , 4},
    {1,  21,	 1,  5,	MMC_RED   ,11},
