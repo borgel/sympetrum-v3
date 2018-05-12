@@ -131,6 +131,8 @@ void _ConfigureLEDController(void) {
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
+
+   led_ClearDisplay();
 }
 
 void led_ClearDisplay(void) {
@@ -195,7 +197,7 @@ void led_ForceRefresh(void) {
    for(i = 0; i < MATRIX_ROWS; i++) {
       //blanking is only needed if we aren't always displaying colors. If we are then
       // ghosting isn't very visible and this just slows things down
-      //_WriteRow(ROW_BLANKING);
+      _WriteRow(ROW_BLANKING);
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
@@ -225,7 +227,6 @@ void led_UpdateDisplay(void) {
          matrixState.waitCounts = 0;
 
          // progress SM
-         //matrixState.stage = DS_BlankRow;
          matrixState.stage = DS_WriteNewRow;
          break;
 
@@ -234,7 +235,7 @@ void led_UpdateDisplay(void) {
          _WriteRow(ROW_BLANKING);
 
          // progress SM
-         matrixState.stage = DS_WriteNewRow;
+         matrixState.stage = DS_DisableRow;
          break;
 
       case DS_WriteNewRow:
@@ -259,7 +260,8 @@ void led_UpdateDisplay(void) {
             matrixState.waitCounts = 0;
 
             //progress SM
-            matrixState.stage = DS_DisableRow;
+            //blank for one cycle
+            matrixState.stage = DS_BlankRow;
          }
 
          break;
@@ -280,7 +282,7 @@ void led_UpdateDisplay(void) {
 
       default:
          //should never happen
-         iprintf("Matrix SM default state. Why?\n");
+         iprintf("Matrix SM hit default state. Why?\n");
          break;
    }
 }
@@ -322,7 +324,8 @@ static bool _WriteRow(int rowIndex) {
 
    //FIXME better way? somehow expose a buffer to write into?
    //TODO DMA this
-   memcpy(&config[1], matrixRaw[rowIndex], LED_CHANNELS);
+   //FIXME is row offset right here? gets 0, 1, 2, 3?
+   memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    if(stat != 0) {
