@@ -75,6 +75,8 @@ struct ColorPointer {
 static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
+// mapping layer for accessing the array linearly
+static struct ColorPointer matrixLinear[TOTAL_LOGICAL_LEDS];
 
 // static LUT for controlling matrix row FETs
 static uint16_t const MatrixPinLUT[]         = {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
@@ -167,6 +169,24 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    *matrixMapped[x][y].r = rgb.r;
    *matrixMapped[x][y].g = rgb.g;
    *matrixMapped[x][y].b = rgb.b;
+}
+
+void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
+   if(x >= TOTAL_LOGICAL_LEDS) {
+      iprintf("Illegal linear request for LED %d\n", x);
+      return;
+   }
+
+   //disregard the V that was passed in and use global brightness
+   color->v = matrixState.brightness;
+
+   //FIXME do this more elegantly?
+   struct color_ColorRGB rgb;
+   color_HSV2RGB(color, &rgb);
+
+   *matrixLinear[x].r = rgb.r;
+   *matrixLinear[x].g = rgb.g;
+   *matrixLinear[x].b = rgb.b;
 }
 
 // call to complete an entire draw cycle immediately
@@ -376,19 +396,23 @@ static void _configureMapping(void) {
       //FIXME rm
       //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
 
+      // add an offset of 12 for each bank (0-3) to calculate the linear position
+      int const linearOffset = m->linear + LinearMatrixBankOffsets[m->row];
+
       switch(m->color) {
          case MMC_RED:
             matrixMapped[m->row][m->col].r = r;
+            matrixLinear[linearOffset].r = r;
             break;
          case MMC_GREEN:
             matrixMapped[m->row][m->col].g = r;
+            matrixLinear[linearOffset].g = r;
             break;
          case MMC_BLUE:
             matrixMapped[m->row][m->col].b = r;
+            matrixLinear[linearOffset].b = r;
             break;
       }
-
-      // and linear
 
       // and sparse
       //TODO

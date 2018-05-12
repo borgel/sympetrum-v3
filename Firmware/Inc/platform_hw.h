@@ -9,6 +9,8 @@
 #define LED_CHANNELS             (36)
 #define LED_BANKS                (4)
 
+#define TOTAL_LOGICAL_LEDS       ((LED_CHANNELS * LED_BANKS) / 3)
+
 #define MATRIX_ROWS              (4)
 #define MATRIX_COLS              (12)
 
