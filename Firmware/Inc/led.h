@@ -12,6 +12,7 @@ void led_SetGlobalBrightness(uint8_t bright);
 
 void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color);
 void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color);
+void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * color);
 
 void led_ClearDisplay(void);
 

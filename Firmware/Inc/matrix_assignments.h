@@ -197,3 +197,11 @@ const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
    //143
 };
 
+//FIXME move
+#define NO     (0xFF)
+// 31 wide, 30 tall
+uint8_t const MatrixMapSparse[30][31]  = {
+   // put the linear ch number in if it exists, and NO if it is blank
+   {NO,NO,NO,NO,NO,NO,NO,NO,NO,NO,24,NO,NO,NO,NO,NO,NO,NO,25,NO,NO,NO,NO,NO,NO,NO,NO,NO,NO,NO,NO},
+};
+

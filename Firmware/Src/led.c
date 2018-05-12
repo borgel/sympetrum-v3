@@ -191,6 +191,10 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
    *matrixLinear[x].b = rgb.b;
 }
 
+void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
+   //TODO
+}
+
 // call to complete an entire draw cycle immediately
 void led_ForceRefresh(void) {
    int i;
@@ -416,10 +420,10 @@ static void _configureMapping(void) {
             matrixLinear[linearOffset].b = r;
             break;
       }
-
-      // and sparse
-      //TODO
    }
+
+   //TODO iterate through sparse array
+   //set each to be a ptr to the hue of the correct linear
 
    iprintf("Done\n");
 }
