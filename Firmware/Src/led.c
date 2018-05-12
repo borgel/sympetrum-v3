@@ -193,6 +193,15 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
 
 void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //TODO
+   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
+      iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
+      return;
+   }
+
+   if(MatrixMapSparse[y][x] != 0xFF) {
+      led_DrawPixelLinear(MatrixMapSparse[y][x], color);
+   }
+
 }
 
 // call to complete an entire draw cycle immediately
