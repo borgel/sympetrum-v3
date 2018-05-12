@@ -162,11 +162,20 @@ int main(void)
          }
       }
       */
+      /*
       if(count % 1000) {
          for(int i = 0; i < ChasingSize; i++) {
             struct coord const * c = &chasingArray[i];
             color.h = huePhase + (i * 10);
             led_DrawPixel(c->x, c->y, &color);
+         }
+      }
+      */
+      if(count % 1000) {
+         for(int i = 0; i < 12 * 2; i++) {
+            color.h = huePhase + (i * 10);
+            led_DrawPixelLinear(i, &color);
+            led_DrawPixelLinear(47 - i, &color);
          }
       }
 
