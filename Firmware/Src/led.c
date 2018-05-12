@@ -85,6 +85,7 @@ static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
+static void _configureMapping(void);
 
 void led_Init(void){
    // most HW init in platform_hw and hal_msp
@@ -105,31 +106,9 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
-   //TODO is this max?
    matrixState.brightness = 255;
 
-   iprintf("Setting up matrix interposer...\n");
-   for(int i = 0; i < TOTAL_CHANNELS; i++) {
-      struct matrixMap const * const m = &MatrixMap[i];
-      // set the pointers in matrixMapped to point to the correct elements in
-      // the matrixRaw below it
-
-      //FIXME rm
-      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
-
-      switch(m->color) {
-         case MMC_RED:
-            matrixMapped[m->row][m->col].r = &matrixRaw[m->bank][m->ch];
-            break;
-         case MMC_GREEN:
-            matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch];
-            break;
-         case MMC_BLUE:
-            matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch];
-            break;
-      }
-   }
-   iprintf("Done\n");
+   _configureMapping();
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -383,6 +362,41 @@ static void _ConfigureFrameClock(void) {
    HAL_TIM_Base_Init(&htim14);
 
    led_MatrixStart();
+}
+
+// Setup all the mapping used to address the matrix
+static void _configureMapping(void) {
+   iprintf("Setting up matrix interposer...\n");
+   for(int i = 0; i < TOTAL_CHANNELS; i++) {
+      struct matrixMap const * const m = &MatrixMap[i];
+      uint8_t * const r = &matrixRaw[m->bank][m->ch];
+      // set the pointers in matrixMapped to point to the correct elements in
+      // the matrixRaw below it
+
+      //FIXME rm
+      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
+
+      switch(m->color) {
+         case MMC_RED:
+            matrixMapped[m->row][m->col].r = r;
+            break;
+         case MMC_GREEN:
+            matrixMapped[m->row][m->col].g = r;
+            break;
+         case MMC_BLUE:
+            matrixMapped[m->row][m->col].b = r;
+            break;
+      }
+
+      // and linear
+
+      // and sparse
+      //TODO
+   }
+
+   iprintf("Setting up linear...\n");
+
+   iprintf("Done\n");
 }
 
 void led_MatrixStart(void) {
