@@ -201,7 +201,6 @@ void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(MatrixMapSparse[y][x] != 0xFF) {
       led_DrawPixelLinear(MatrixMapSparse[y][x], color);
    }
-
 }
 
 // call to complete an entire draw cycle immediately
