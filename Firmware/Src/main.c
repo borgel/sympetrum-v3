@@ -66,7 +66,99 @@ static void fillWhite(void) {
    }
 }
 
-static uint8_t HueTable[] = {0
+// 45 * 2 elements of a sin table
+static uint8_t HueTable[] = {
+         254,
+         254,
+         254,
+         253,
+         253,
+         252,
+         251,
+         250,
+         249,
+         248,
+         246,
+         245,
+         243,
+         241,
+         239,
+         237,
+         235,
+         232,
+         230,
+         227,
+         224,
+         221,
+         218,
+         215,
+         212,
+         209,
+         205,
+         202,
+         198,
+         194,
+         191,
+         187,
+         183,
+         179,
+         175,
+         170,
+         166,
+         162,
+         158,
+         153,
+         149,
+         145,
+         140,
+         136,
+         131,
+         127,
+         123,
+         118,
+         114,
+         109,
+         105,
+         101,
+         96,
+         92,
+         88,
+         84,
+         79,
+         75,
+         71,
+         67,
+         64,
+         60,
+         56,
+         52,
+         49,
+         45,
+         42,
+         39,
+         36,
+         33,
+         30,
+         27,
+         24,
+         22,
+         19,
+         17,
+         15,
+         13,
+         11,
+         9,
+         8,
+         6,
+         5,
+         4,
+         3,
+         2,
+         1,
+         1,
+         0,
+         0,
+         0
 };
 
 int main(void)
@@ -148,13 +240,36 @@ int main(void)
       if(count % 1000) {
          //MATRIX_POLAR_RINGS = 18
          for(int i = 0; i < 18; i++) {
-            color.h = huePhase + (i * 10);
+            //color.h = huePhase + (i * 10);
+
+            //int v = (huePhase + i * 1) % 45;
+
+#define LEN 90.0
+
+            // pitch of 2 to ~9 look ok
+            //int v = (int)((((float)huePhase + (float)i * 7.0) / 255.0) * LEN);
+            int v = (((float)huePhase + (float)i * 6.0) / 255.0) * LEN;
+            v %= (int)LEN;
+            //iprintf("%d\n", v);
+            color.h = HueTable[v];
+
+            /*
+            if(i == 0) {
+               iprintf("[%d]%d )", v, color.h);
+
+               struct color_ColorRGB rgb;
+               color_HSV2RGB(&color, &rgb);
+
+               iprintf("(.r = %d, .g = %d, .b = %d)\n", rgb.r, rgb.g, rgb.b);
+            }
+            */
+
             led_DrawRing(i, &color);
          }
       }
 
       //if(count % 9000) {
-      if(count % 5000) {
+      if(count % 1000) {
          huePhase += 1;
       }
 
