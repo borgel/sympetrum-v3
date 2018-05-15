@@ -242,14 +242,30 @@ uint8_t const MatrixMapSparse[30][31]  = {
 //  0  1  2  3  4   5  6  7  8  9   10 11 12 13 14  15 16 17 18 19  20 21 22 23 24  25 26 27 28 29  30
 };
 
-// FIXME reset 2nd bound to the max number in one ring
-uint8_t const MatrixMapPolar[18][5] = {
+//FIXME move
+#define MATRIX_POLAR_RINGS    (18)
+
+// bounds set manually to encompass most LEDs in a ring
+uint8_t const MatrixMapPolar[MATRIX_POLAR_RINGS][9] = {
    // terminate each row with a NO
    {20, NO},
    {NO}, //blank
    {11, 19, 27, 42, NO},
    {21, 26, NO},
-   //TODO finish
+   {22, 25, 28, 34, 41, 10, 12, 18, NO},  //5
+   {23, 24, NO},
+   {3, 4, 9, 13, 33, 35, 40, 43, NO},
+   {5, 17, 29, 39, NO},
+   {44, NO},
+   {8, 14, 32, 36, NO},  //10
+   {2, 6, 38, NO},
+   {16, 30, NO},
+   {45, 7, 37, NO},  //13
+   {1, 31, 15, NO},
+   {46, NO},  //15
+   {0, NO},
+   {NO},
+   {47, NO},  //18
 };
 
 // and we're done
