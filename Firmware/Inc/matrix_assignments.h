@@ -8,7 +8,7 @@
 #define TOTAL_CHANNELS     (LED_CHANNELS * LED_BANKS)
 
 // used to mark when an LED is absent from a map
-#define NO_LED    (0xFF)
+#define MATRIX_NO_LED      (0xFF)
 
 /*
  * This file maps remaps physical RGB channels and bank to friendly logical
@@ -197,10 +197,15 @@ const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
    //143
 };
 
+// FIXME move
+// these are arbitrary based on manual mapping (see accompanying PDF for reference)
+#define MATRIX_SPARSE_WIDTH         (31)
+#define MATRIX_SPARSE_HEIGHT        (30)
+
 // use a more convenient macro for a moment
-#define NO        (NO_LED)
+#define NO        (MATRIX_NO_LED)
 // 31 wide, 30 tall
-uint8_t const MatrixMapSparse[30][31]  = {
+uint8_t const MatrixMapSparse[MATRIX_SPARSE_HEIGHT][MATRIX_SPARSE_WIDTH]  = {
    // put the linear ch number (0-47) in if it exists, and NO if it is blank
    // divided into 5x5 grids                        \/
 //  0  1  2  3  4   5  6  7  8  9   10 11 12 13 14  15 16 17 18 19  20 21 22 23 24  25 26 27 28 29  30

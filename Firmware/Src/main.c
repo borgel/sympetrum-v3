@@ -135,6 +135,7 @@ int main(void)
          }
       }
       */
+      /*
       if(count % 1000) {
          for(int i = 0; i < 12 * 2; i++) {
             color.h = huePhase + (i * 10);
@@ -142,8 +143,18 @@ int main(void)
             led_DrawPixelLinear(47 - i, &color);
          }
       }
+      */
 
-      if(count % 9000) {
+      if(count % 1000) {
+         //MATRIX_POLAR_RINGS = 18
+         for(int i = 0; i < 18; i++) {
+            color.h = huePhase + (i * 10);
+            led_DrawRing(i, &color);
+         }
+      }
+
+      //if(count % 9000) {
+      if(count % 5000) {
          huePhase += 1;
       }
 

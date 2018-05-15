@@ -191,15 +191,26 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
    *matrixLinear[x].b = rgb.b;
 }
 
-void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
-   //TODO
-   if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
+void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
+   if(x >= MATRIX_SPARSE_WIDTH || y >= MATRIX_SPARSE_HEIGHT ) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
    }
 
-   if(MatrixMapSparse[y][x] != 0xFF) {
+   if(MatrixMapSparse[y][x] != MATRIX_NO_LED) {
       led_DrawPixelLinear(MatrixMapSparse[y][x], color);
+   }
+}
+
+void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
+   if(r >= MATRIX_POLAR_RINGS) {
+      iprintf("Illegal ring request (%d)\n", r);
+      return;
+   }
+
+   //uint8_t addr = 0;
+   for(int i = 0; MatrixMapPolar[r][i] != MATRIX_NO_LED; i++) {
+      led_DrawPixelLinear(MatrixMapPolar[r][i], color);
    }
 }
 
