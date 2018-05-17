@@ -13,23 +13,19 @@
 #include "board_id.h"
 #include "test.h"
 #include "version.h"
+#include "test_patterns.h"
 
 #include "ir.h"
 
 #include <string.h>
 #include <stdlib.h>
 
-union Interrupts {
-   uint32_t mask;
-   struct {
-      //FIXME update with real peripherals
-      uint8_t     accelerometer  : 1;
-      uint8_t     charger        : 1;
-   };
-};
+#define BUTTON_DEBOUNCE_MS    150
+static uint32_t lastUserButton = 0;
 
 // indicate if we are in test mode
 static bool TestMode = false;
+static bool TestModeLED = false;
 
 static void testDarknetIR(void) {
    iprintf("Darknet TX\n");
@@ -46,26 +42,6 @@ static void testDarknetIR(void) {
    iprintf("have %d bytes\n", IRBytesAvailable());
 }
 
-// just paint the display white
-static void fillWhite(void) {
-   struct color_ColorHSV c = {.h = 10, .s = 0, .v = 255};
-   int row, col;
-
-   iprintf("Fill display white forever\n");
-   while(true) {
-      for(row = 0; row < 4; row++) {
-         for(col = 0; col < 12; col++) {
-            iprintf("[%d,%d]\n", row, col);
-
-            //led_ClearDisplay();
-            led_DrawPixel(row, col, &c);
-
-            //HAL_Delay(500);
-         }
-      }
-   }
-}
-
 int main(void)
 {
    HAL_Init();
@@ -79,7 +55,7 @@ int main(void)
       TestMode = true;
 
       // this should never return
-      test_DoTests();
+      //test_DoTests();
    }
    TestMode = false;
 
@@ -95,18 +71,21 @@ int main(void)
    //testDarknetIR();
    //iprintf(">> DONE TEST DARKNET IR<<\n");
 
-   //FIXME rm?
-   uint32_t lux;
-   led_SetGlobalBrightness(255);
+   //TODO enter on boot if button held down
+   // fall into LED test patterns forever
+   TestModeLED = true;
+   TestPatterns_Start();
 
-   //FIXME move
-   struct color_ColorHSV c = {.h = 10, .s = 255, .v = 255};
-
-   int x, y;
    int count = 0;
-   uint8_t off = 0;
    uint32_t bytes = 0;
    while(true) {
+      // handle the button
+      if(lastUserButton && (HAL_GetTick() - lastUserButton > BUTTON_DEBOUNCE_MS)) {
+         lastUserButton = 0;
+
+         iprintf("Button Pressed\n");
+      }
+
       if(IRDataReady()) {
          iprintf("Got Full Message! ");
 
@@ -114,37 +93,17 @@ int main(void)
          iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
       }
 
-      //permute
-      if(count % 50 == 0) {
-         for(x = 0; x < 4; x++) {
-            for(y = 0; y < 12; y++) {
-               c.h = off;
-               led_DrawPixel(x, y, &c);
-            }
-         }
-         off++;
-      }
-
+      /*
       //FIXME rm
-      if(count > 4000) {
+      if(count > 100) {
          count = 0;
 
+         uint32_t lux;
          als_GetLux(&lux);
 
          iprintf("Light Counts = %d\n", lux);
-
-         /*
-         //calculate the brightness to set
-         if(60 + (lux / 10) > 255) {
-            led_SetGlobalBrightness(255);
-         }
-         else {
-            led_SetGlobalBrightness(60 + (lux / 10));
-         }
-         */
-
-         //testDarknetIR();
       }
+      */
       count++;
    }
 
@@ -152,12 +111,18 @@ int main(void)
 }
 
 void main_DoButton(bool const buttonPressed) {
-   iprintf("Button to %d\n", buttonPressed);
-
    if(TestMode) {
       test_UserButton(buttonPressed);
    }
+   else if(TestModeLED) {
+      if(buttonPressed) {
+         TestPatterns_Button();
+      }
+   }
    else {
+      if(lastUserButton == 0 && buttonPressed) {
+         lastUserButton = HAL_GetTick();
+      }
    }
 }
 

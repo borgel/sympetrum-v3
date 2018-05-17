@@ -75,6 +75,8 @@ struct ColorPointer {
 static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
+// mapping layer for accessing the array linearly
+static struct ColorPointer matrixLinear[TOTAL_LOGICAL_LEDS];
 
 // static LUT for controlling matrix row FETs
 static uint16_t const MatrixPinLUT[]         = {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
@@ -85,6 +87,7 @@ static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
+static void _configureMapping(void);
 
 void led_Init(void){
    // most HW init in platform_hw and hal_msp
@@ -105,31 +108,9 @@ void _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
 
-   //TODO is this max?
    matrixState.brightness = 255;
 
-   iprintf("Setting up matrix interposer...\n");
-   for(int i = 0; i < TOTAL_CHANNELS; i++) {
-      struct matrixMap const * const m = &MatrixMap[i];
-      // set the pointers in matrixMapped to point to the correct elements in
-      // the matrixRaw below it
-
-      //FIXME rm
-      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
-
-      switch(m->color) {
-         case MMC_RED:
-            matrixMapped[m->row][m->col].r = &matrixRaw[m->bank][m->ch];
-            break;
-         case MMC_GREEN:
-            matrixMapped[m->row][m->col].g = &matrixRaw[m->bank][m->ch];
-            break;
-         case MMC_BLUE:
-            matrixMapped[m->row][m->col].b = &matrixRaw[m->bank][m->ch];
-            break;
-      }
-   }
-   iprintf("Done\n");
+   _configureMapping();
 
    // disable SW shutdown
    data[0] = REG_SHUTDOWN;
@@ -150,6 +131,8 @@ void _ConfigureLEDController(void) {
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
+
+   led_ClearDisplay();
 }
 
 void led_ClearDisplay(void) {
@@ -190,13 +173,53 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    *matrixMapped[x][y].b = rgb.b;
 }
 
+void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
+   if(x >= TOTAL_LOGICAL_LEDS) {
+      iprintf("Illegal linear request for LED %d\n", x);
+      return;
+   }
+
+   //disregard the V that was passed in and use global brightness
+   color->v = matrixState.brightness;
+
+   //FIXME do this more elegantly?
+   struct color_ColorRGB rgb;
+   color_HSV2RGB(color, &rgb);
+
+   *matrixLinear[x].r = rgb.r;
+   *matrixLinear[x].g = rgb.g;
+   *matrixLinear[x].b = rgb.b;
+}
+
+void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
+   if(x >= MATRIX_SPARSE_WIDTH || y >= MATRIX_SPARSE_HEIGHT ) {
+      iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
+      return;
+   }
+
+   if(MatrixMapSparse[y][x] != MATRIX_NO_LED) {
+      led_DrawPixelLinear(MatrixMapSparse[y][x], color);
+   }
+}
+
+void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
+   if(r >= MATRIX_POLAR_RINGS) {
+      iprintf("Illegal ring request (%d)\n", r);
+      return;
+   }
+
+   for(int i = 0; MatrixMapPolar[r][i] != MATRIX_NO_LED; i++) {
+      led_DrawPixelLinear(MatrixMapPolar[r][i], color);
+   }
+}
+
 // call to complete an entire draw cycle immediately
 void led_ForceRefresh(void) {
    int i;
    for(i = 0; i < MATRIX_ROWS; i++) {
       //blanking is only needed if we aren't always displaying colors. If we are then
       // ghosting isn't very visible and this just slows things down
-      //_WriteRow(ROW_BLANKING);
+      _WriteRow(ROW_BLANKING);
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
@@ -226,7 +249,6 @@ void led_UpdateDisplay(void) {
          matrixState.waitCounts = 0;
 
          // progress SM
-         //matrixState.stage = DS_BlankRow;
          matrixState.stage = DS_WriteNewRow;
          break;
 
@@ -235,7 +257,7 @@ void led_UpdateDisplay(void) {
          _WriteRow(ROW_BLANKING);
 
          // progress SM
-         matrixState.stage = DS_WriteNewRow;
+         matrixState.stage = DS_DisableRow;
          break;
 
       case DS_WriteNewRow:
@@ -260,7 +282,8 @@ void led_UpdateDisplay(void) {
             matrixState.waitCounts = 0;
 
             //progress SM
-            matrixState.stage = DS_DisableRow;
+            //blank for one cycle
+            matrixState.stage = DS_BlankRow;
          }
 
          break;
@@ -281,7 +304,7 @@ void led_UpdateDisplay(void) {
 
       default:
          //should never happen
-         iprintf("Matrix SM default state. Why?\n");
+         iprintf("Matrix SM hit default state. Why?\n");
          break;
    }
 }
@@ -323,7 +346,7 @@ static bool _WriteRow(int rowIndex) {
 
    //FIXME better way? somehow expose a buffer to write into?
    //TODO DMA this
-   memcpy(&config[1], matrixRaw[rowIndex], LED_CHANNELS);
+   memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    if(stat != 0) {
@@ -383,6 +406,40 @@ static void _ConfigureFrameClock(void) {
    HAL_TIM_Base_Init(&htim14);
 
    led_MatrixStart();
+}
+
+// Setup all the mapping used to address the matrix
+static void _configureMapping(void) {
+   iprintf("Setting up matrix interposer...\n");
+   for(int i = 0; i < TOTAL_CHANNELS; i++) {
+      struct matrixMap const * const m = &MatrixMap[i];
+      uint8_t * const r = &matrixRaw[m->bank][m->ch];
+      // set the pointers in matrixMapped to point to the correct elements in
+      // the matrixRaw below it
+
+      //FIXME rm
+      //iprintf("%d,%d -> b %d,ch %d\n", m->row, m->col, m->bank, m->ch);
+
+      // add an offset of 12 for each bank (0-3) to calculate the linear position
+      int const linearOffset = m->linear + LinearMatrixBankOffsets[m->row];
+
+      switch(m->color) {
+         case MMC_RED:
+            matrixMapped[m->row][m->col].r = r;
+            matrixLinear[linearOffset].r = r;
+            break;
+         case MMC_GREEN:
+            matrixMapped[m->row][m->col].g = r;
+            matrixLinear[linearOffset].g = r;
+            break;
+         case MMC_BLUE:
+            matrixMapped[m->row][m->col].b = r;
+            matrixLinear[linearOffset].b = r;
+            break;
+      }
+   }
+
+   iprintf("Done\n");
 }
 
 void led_MatrixStart(void) {
