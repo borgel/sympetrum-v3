@@ -107,7 +107,8 @@ static uint8_t HueTable[] = {
 //FIXME rm
 enum TestPattern {
    TP_Start,
-   TP_Chasing,
+   TP_ChasingCycle,
+   TP_ChasingVertical,
    TP_Polar,
    TP_End,
 };
@@ -140,7 +141,7 @@ void TestPatterns_Start(void) {
    //FIXME move
    struct color_ColorHSV color = {.h = 10, .s = 255, .v = 255};
 
-   enum TestPattern activePattern = TP_Chasing;
+   enum TestPattern activePattern = TP_Start + 1;
 
    int huePhase = 0;
    int count = 0;
@@ -177,8 +178,23 @@ void TestPatterns_Start(void) {
          }
       }
       */
+      if(activePattern == TP_ChasingCycle) {
+         if(count % 500) {
+            for(int i = 0; i < 12 * 4; i++) {
+               //color.h = huePhase + (i * 10);
 
-      if(activePattern == TP_Chasing) {
+               // 6.0 orig
+               int v = (((float)huePhase + (float)i * 6.0) / 255.0) * (float)sizeof(HueTable);
+               v %= (int)sizeof(HueTable);
+               color.h = HueTable[v];
+
+               led_DrawPixelLinear(i, &color);
+            }
+            huePhase += 1;
+         }
+      }
+
+      if(activePattern == TP_ChasingVertical) {
          if(count % 500) {
             for(int i = 0; i < 12 * 2; i++) {
                //color.h = huePhase + (i * 10);
