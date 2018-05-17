@@ -8,6 +8,18 @@
 #include "platform_hw.h"
 #include "iprintf.h"
 
+// TODO adjust these buckets
+static uint32_t const buckets[] = {
+   [ALC_Start] = 0,
+   // 0 to next is next bucket
+   [ALC_IndoorDark] =   50,
+   [ALC_IndoorLight] =  2000,
+   [ALC_OutdoorShade] = 3700,
+   // implicitly, everything higher is sunlight (saturation)
+   [ALC_Sunlight] =     10000,
+   [ALC_End] = 0,
+};
+
 static ADC_HandleTypeDef adcALS;
 
 static bool conversionInProgress;
@@ -43,7 +55,7 @@ void als_StartReading(void) {
 }
 
 // returns true when new data arrives
-bool als_GetLux(uint32_t * lux) {
+bool als_GetLux(enum ALS_LightCondition * cond) {
    bool res = false;
 
    if(conversionInProgress) {
@@ -52,9 +64,21 @@ bool als_GetLux(uint32_t * lux) {
          conversionInProgress = false;
          res = true;
 
-         //TODO LUT + convert into intensity buckets
+         uint32_t rawRead;
+         rawRead  = HAL_ADC_GetValue(&adcALS);
 
-         *lux = HAL_ADC_GetValue(&adcALS);
+         // convert into intensity buckets
+         // search downwards until we find the first bucket we are inside
+         *cond = ALC_Start + 1;
+         for(int i = ALC_End - 1; i > ALC_Start; i--) {
+            if(rawRead < buckets[i]) {
+               continue;
+            }
+
+            // the previous one was it
+            *cond = (enum ALS_LightCondition)i;
+            return res;
+         }
       }
 
       HAL_ADC_Stop(&adcALS);

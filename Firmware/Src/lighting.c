@@ -18,9 +18,9 @@ void lighting_Init(void) {
    led_Init();
    als_Init();
 
-   // TODO take and handle one ALS sample
+   // TODO take and handle one ALS sample to set the tone
 
-   //TODO coordinate animations
+   // TODO coordinate animations
 }
 
 void lighting_Timeslice(uint32_t const timeMS) {
@@ -32,14 +32,14 @@ void lighting_Timeslice(uint32_t const timeMS) {
          return;
       }
 
-      uint32_t lux;
-      if(als_GetLux(&lux)) {
+      enum ALS_LightCondition condition;
+      if(als_GetLux(&condition)) {
          // we got a valid reading. Reset things
          state.alsInProgress = false;
          state.lastALS = timeMS;
 
          // FIXME rm
-         iprintf("Light Counts = %d\n", lux);
+         iprintf("Light condition = %d\n", condition);
 
          //TODO act on ALS reading
       }
