@@ -10,6 +10,8 @@
 
 static ADC_HandleTypeDef adcALS;
 
+static bool conversionInProgress;
+
 static bool _ADCConfig(void);
 
 bool als_Init(void) {
@@ -21,30 +23,42 @@ bool als_Init(void) {
    GPIO_InitStruct.Pull = GPIO_NOPULL;
    HAL_GPIO_Init(ADC_IN_Port, &GPIO_InitStruct);
 
+   //TODO start this in the background and pick it up later
+
    // low priority ADC interrupt
    //HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 2, 0);
    //HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 
+   conversionInProgress = false;
+
    return _ADCConfig();
 }
 
+void als_StartReading(void) {
+   if(!conversionInProgress) {
+      //save power by only enabling the ADC when we need it
+      HAL_ADC_Start(&adcALS);
+      conversionInProgress = true;
+   }
+}
+
+// returns true when new data arrives
 bool als_GetLux(uint32_t * lux) {
    bool res = false;
 
-   //save power by only enabling the ADC when we need it
-   HAL_ADC_Start(&adcALS);
+   if(conversionInProgress) {
+      if (HAL_ADC_PollForConversion(&adcALS, 1000000) == HAL_OK)
+      {
+         conversionInProgress = false;
+         res = true;
 
-   if (HAL_ADC_PollForConversion(&adcALS, 1000000) == HAL_OK)
-   {
-      res = true;
+         //TODO LUT + convert into intensity buckets
 
-      //iprintf("ADC = %d\n", HAL_ADC_GetValue(&adcALS));
-      //TODO LUT + enum for buckets?
+         *lux = HAL_ADC_GetValue(&adcALS);
+      }
 
-      *lux = HAL_ADC_GetValue(&adcALS);
+      HAL_ADC_Stop(&adcALS);
    }
-
-   HAL_ADC_Stop(&adcALS);
 
    return res;
 }
