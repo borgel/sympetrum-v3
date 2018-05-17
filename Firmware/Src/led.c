@@ -208,7 +208,6 @@ void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
       return;
    }
 
-   //uint8_t addr = 0;
    for(int i = 0; MatrixMapPolar[r][i] != MATRIX_NO_LED; i++) {
       led_DrawPixelLinear(MatrixMapPolar[r][i], color);
    }
@@ -347,7 +346,6 @@ static bool _WriteRow(int rowIndex) {
 
    //FIXME better way? somehow expose a buffer to write into?
    //TODO DMA this
-   //FIXME is row offset right here? gets 0, 1, 2, 3?
    memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
@@ -440,9 +438,6 @@ static void _configureMapping(void) {
             break;
       }
    }
-
-   //TODO iterate through sparse array
-   //set each to be a ptr to the hue of the correct linear
 
    iprintf("Done\n");
 }

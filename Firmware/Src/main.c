@@ -71,9 +71,6 @@ int main(void)
    //testDarknetIR();
    //iprintf(">> DONE TEST DARKNET IR<<\n");
 
-   //FIXME rm?
-   led_SetGlobalBrightness(255);
-
    //TODO enter on boot if button held down
    // fall into LED test patterns forever
    TestModeLED = true;
@@ -86,8 +83,7 @@ int main(void)
       if(lastUserButton && (HAL_GetTick() - lastUserButton > BUTTON_DEBOUNCE_MS)) {
          lastUserButton = 0;
 
-         iprintf("Button\n");
-
+         iprintf("Button Pressed\n");
       }
 
       if(IRDataReady()) {
@@ -115,8 +111,6 @@ int main(void)
 }
 
 void main_DoButton(bool const buttonPressed) {
-   iprintf("Button to %d\n", buttonPressed);
-
    if(TestMode) {
       test_UserButton(buttonPressed);
    }
