@@ -138,7 +138,6 @@ static void fillWhite(void) {
 }
 
 void TestPatterns_Start(void) {
-   //FIXME move
    struct color_ColorHSV color = {.h = 10, .s = 255, .v = 255};
 
    enum TestPattern activePattern = TP_Start + 1;
@@ -160,16 +159,6 @@ void TestPatterns_Start(void) {
       }
       //permute
       /*
-      if(count % 50 == 0) {
-         for(x = 0; x < 4; x++) {
-            for(y = 0; y < 12; y++) {
-               c.h = off;
-               led_DrawPixel(x, y, &c);
-            }
-         }
-      }
-      */
-      /*
       if(count % 1000) {
          for(int i = 0; i < ChasingSize; i++) {
             struct coord const * c = &chasingArray[i];
@@ -181,9 +170,6 @@ void TestPatterns_Start(void) {
       if(activePattern == TP_ChasingCycle) {
          if(count % 500) {
             for(int i = 0; i < 12 * 4; i++) {
-               //color.h = huePhase + (i * 10);
-
-               // 6.0 orig
                int v = (((float)huePhase + (float)i * 6.0) / 255.0) * (float)sizeof(HueTable);
                v %= (int)sizeof(HueTable);
                color.h = HueTable[v];
@@ -197,9 +183,6 @@ void TestPatterns_Start(void) {
       if(activePattern == TP_ChasingVertical) {
          if(count % 500) {
             for(int i = 0; i < 12 * 2; i++) {
-               //color.h = huePhase + (i * 10);
-
-               // 6.0 orig
                int v = (((float)huePhase + (float)i * 7.0) / 255.0) * (float)sizeof(HueTable);
                v %= (int)sizeof(HueTable);
                color.h = HueTable[v];
@@ -221,22 +204,9 @@ void TestPatterns_Start(void) {
                //int v = (huePhase + i * 1) % 45;
 
                // pitch of 2 to ~9 look ok
-               //int v = (int)((((float)huePhase + (float)i * 7.0) / 255.0) * LEN);
                int v = (((float)huePhase + (float)i * 6.0) / 255.0) * (float)sizeof(HueTable);
                v %= (int)sizeof(HueTable);
-               //iprintf("%d\n", v);
                color.h = HueTable[v];
-
-               /*
-                  if(i == 0) {
-                  iprintf("[%d]%d )", v, color.h);
-
-                  struct color_ColorRGB rgb;
-                  color_HSV2RGB(&color, &rgb);
-
-                  iprintf("(.r = %d, .g = %d, .b = %d)\n", rgb.r, rgb.g, rgb.b);
-                  }
-                */
 
                led_DrawRing(i, &color);
             }
