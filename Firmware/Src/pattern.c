@@ -4,6 +4,9 @@
 #include "terrible_timer.h"
 #include "iprintf.h"
 
+#include "color.h"
+#include "led.h"
+
 //#include "yabi/yabi.h"
 
 #include <stdint.h>
@@ -12,8 +15,11 @@
 #define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
 #define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (2)
 
-//FIXME package into TA struct?
-#define  ANIMATION_FRAMES                       (49)  // size of COS table?
+//FIXME package into TA struct
+#define  ANIMATION_FRAMES                       (90)  // size of COS table?
+
+extern uint8_t const CosTable[];
+extern uint8_t const CosTableSize;
 
 struct TerribleAnimation {
    //TODO package these into a module somewhere
@@ -21,6 +27,8 @@ struct TerribleAnimation {
    uint8_t clockDivisor;
    // TODO use?
    //uint8_t period;
+
+   uint8_t huePhase;
 };
 
 struct State {
@@ -73,11 +81,34 @@ void pattern_Timeslice(uint32_t const timeMS) {
    }
 }
 
+// FIXME package
+static void applyAnimationFrame(uint8_t const frame, uint8_t phase) {
+   struct color_ColorHSV color = {.h = 0, .s = 255, .v = 255};
+   for(int i = 0; i < 18; i++) {
+      // adjust pitch? or just time between frames?
+      // calculate what % done with the animation we are, then rescale it over table size
+      //FIXME can we just use phase + frame?
+      //int v = (((float)phase + (float)i * 1.0) / (float)ANIMATION_FRAMES) * (float)CosTableSize;
+      // TODO adjust pitch. 4 is towards max
+      int v = frame + phase + ((float)i * 2.0);
+      v %= (int)CosTableSize;
+      color.h = CosTable[v];
+
+      //TODO write to YABI
+      led_DrawRing(i, &color);
+   }
+}
+
 static void handleAnimationFrame(struct TerribleAnimation * const a) {
    //TODO figure out this frame, and write it to YABI
    iprintf("F%d ", a->frame);
 
-   //TODO add bounded randomness
+   applyAnimationFrame(a->frame, a->huePhase);
+
+   //TODO add bounded randomness (rand(255) - 128)? cast to u8 so it rolls?
+
+   // FIXME here?
+   a->huePhase++;
 
    // cleanup state
    a->frame++;
