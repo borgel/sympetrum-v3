@@ -4,13 +4,29 @@
 #include "terrible_timer.h"
 #include "iprintf.h"
 
+//#include "yabi/yabi.h"
+
 #include <stdint.h>
 
 // the UNCHANGING beacon clock period
-#define  BEACON_CLOCK_DEFAULT_PERIOD_MS       (60 * 1000)
+#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
+#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (2)
+
+//FIXME package into TA struct?
+#define  ANIMATION_FRAMES                       (49)  // size of COS table?
+
+struct TerribleAnimation {
+   //TODO package these into a module somewhere
+   uint8_t frame;
+   uint8_t clockDivisor;
+   // TODO use?
+   //uint8_t period;
+};
 
 struct State {
    uint32_t lastUpdateMS;
+
+   struct TerribleAnimation animation;
 
    // slow clock that drives everything else
    struct TerribleTimer beaconClock;
@@ -18,13 +34,20 @@ struct State {
    //fast clock that regulates the animation in progress
    struct TerribleTimer animationClock;
 };
-static struct State state = {0};
+static struct State state = {.animation = {.clockDivisor = ANIMATION_CLOCK_DEFAULT_DIVISOR}};
+
+static void handleAnimationFrame(struct TerribleAnimation * const a);
+static uint32_t getAnimationClockPeriod(struct State const * const st);
 
 void pattern_Init(void) {
    IRInit();
 
+   // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
-   //TODO start anim clock?
+   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state));
+
+   //FIXME rm
+   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state));
 
    iprintf("Pattern Init Complete...\n");
 }
@@ -38,12 +61,33 @@ void pattern_Timeslice(uint32_t const timeMS) {
       uint8_t* buf = IRGetBuff(&bytes);
       iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
 
-      //TODO do something clocky
+      //TODO reset both clocks
    }
 
    if(ttimer_HasElapsed(&state.beaconClock)) {
       iprintf("Beacon!\n");
    }
+   // pump the animation on a tick
+   if(ttimer_HasElapsed(&state.animationClock)) {
+      handleAnimationFrame(&state.animation);
+   }
+}
 
-   // TODO ? check for anum clock?
+static void handleAnimationFrame(struct TerribleAnimation * const a) {
+   //TODO figure out this frame, and write it to YABI
+   iprintf("F%d ", a->frame);
+
+   //TODO add bounded randomness
+
+   // cleanup state
+   a->frame++;
+   if(a->frame > ANIMATION_FRAMES) {
+      a->frame = 0;
+   }
+}
+
+static uint32_t getAnimationClockPeriod(struct State const * const st) {
+   uint32_t const totalDuration = BEACON_CLOCK_DEFAULT_PERIOD_MS / st->animation.clockDivisor;
+
+   return totalDuration / ANIMATION_FRAMES;
 }
