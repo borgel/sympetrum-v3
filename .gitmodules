@@ -1,0 +1,3 @@
+[submodule "Firmware/submodules/yabi"]
+	path = Firmware/submodules/yabi
+	url = https://github.com/borgel/yabi
