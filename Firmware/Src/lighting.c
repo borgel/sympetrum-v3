@@ -13,7 +13,6 @@
 #include <string.h>
 
 #define ALS_POLL_INTERVAL_MS        (10 * 1000)
-#define DEFAULT_TRANSITION_MS       (100)
 
 struct State {
    uint32_t alsInProgress;
@@ -69,26 +68,23 @@ void lighting_Timeslice(uint32_t const timeMS) {
    }
 }
 
-void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
+
+void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color, uint32_t durationMS) {
    yabi_Error res;
-   //TODO take a transition time
-   //res  = yabi_setChannel(x, color->h, DEFAULT_TRANSITION_MS);
-   res  = yabi_setChannel(x, color->h, 1000);
+   res  = yabi_setChannel(x, color->h, durationMS);
    if(res != YABI_OK) {
       iprintf("YABI set returend %d\n", res);
    }
 
 }
-void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
-   //TODO ring lookup and interpolation
+void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint32_t durationMS) {
    if(r >= MATRIX_POLAR_RINGS) {
       iprintf("Illegal ring request (%d)\n", r);
       return;
    }
 
    for(int i = 0; MatrixMapPolar[r][i] != MATRIX_NO_LED; i++) {
-      //led_DrawPixelLinear(MatrixMapPolar[r][i], color);
-      lighting_DrawPixelLinear(MatrixMapPolar[r][i], color);
+      lighting_DrawPixelLinear(MatrixMapPolar[r][i], color, durationMS);
    }
 }
 

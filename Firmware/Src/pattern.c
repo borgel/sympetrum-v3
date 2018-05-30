@@ -10,14 +10,16 @@
 #include <stdint.h>
 
 // the UNCHANGING beacon clock period
+//#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
+//FIXME rm
 #define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
-#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (2)
-
-//FIXME package into TA struct
-#define  ANIMATION_FRAMES                       (90)  // size of COS table?
+#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (15)
 
 extern uint8_t const CosTable[];
 extern uint8_t const CosTableSize;
+
+//FIXME package into TA struct
+#define  ANIMATION_FRAMES                       (CosTableSize)
 
 struct TerribleAnimation {
    //TODO package these into a module somewhere
@@ -43,17 +45,17 @@ struct State {
 static struct State state = {.animation = {.clockDivisor = ANIMATION_CLOCK_DEFAULT_DIVISOR}};
 
 static void handleAnimationFrame(struct TerribleAnimation * const a);
-static uint32_t getAnimationClockPeriod(struct State const * const st);
+static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
 
 void pattern_Init(void) {
    IRInit();
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
-   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state));
+   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state.animation));
 
    //FIXME rm
-   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state));
+   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
 
    iprintf("Pattern Init Complete...\n");
 }
@@ -80,7 +82,7 @@ void pattern_Timeslice(uint32_t const timeMS) {
 }
 
 // FIXME package
-static void applyAnimationFrame(uint8_t const frame, uint8_t phase) {
+static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase) {
    struct color_ColorHSV color = {.h = 0, .s = 255, .v = 255};
    for(int i = 0; i < 18; i++) {
       // adjust pitch? or just time between frames?
@@ -92,8 +94,7 @@ static void applyAnimationFrame(uint8_t const frame, uint8_t phase) {
       v %= (int)CosTableSize;
       color.h = CosTable[v];
 
-      //TODO write to YABI
-      lighting_DrawRing(i, &color);
+      lighting_DrawRing(i, &color, durationMS);
    }
 }
 
@@ -101,7 +102,9 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    //TODO figure out this frame, and write it to YABI
    iprintf("F%d ", a->frame);
 
-   applyAnimationFrame(a->frame, a->huePhase);
+   const uint32_t duration = getAnimationClockPeriod(a);
+
+   applyAnimationFrame(a->frame, duration, a->huePhase);
 
    //TODO add bounded randomness (rand(255) - 128)? cast to u8 so it rolls?
 
@@ -115,8 +118,8 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    }
 }
 
-static uint32_t getAnimationClockPeriod(struct State const * const st) {
-   uint32_t const totalDuration = BEACON_CLOCK_DEFAULT_PERIOD_MS / st->animation.clockDivisor;
+static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const animation) {
+   uint32_t const totalDuration = BEACON_CLOCK_DEFAULT_PERIOD_MS / animation->clockDivisor;
 
    return totalDuration / ANIMATION_FRAMES;
 }
