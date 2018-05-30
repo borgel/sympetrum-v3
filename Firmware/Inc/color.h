@@ -45,6 +45,7 @@ static const struct color_ColorHSV COLOR_HSV_BLACK = {
 };
 
 void color_HSV2RGB(struct color_ColorHSV const *hsv, struct color_ColorRGB *rgb);
+void color_CIECorrect(struct color_ColorRGB * const rgb);
 
 #endif//COLOR_H__
 
