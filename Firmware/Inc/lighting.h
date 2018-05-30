@@ -9,6 +9,6 @@
 void lighting_Init(void);
 void lighting_Timeslice(uint32_t const timeMS);
 
-void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color, uint32_t durationMS);
-void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint32_t durationMS);
+void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color, uint8_t maxJitter, uint32_t durationMS);
+void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint8_t maxJitter, uint32_t durationMS);
 

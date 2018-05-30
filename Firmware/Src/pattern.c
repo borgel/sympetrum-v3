@@ -13,7 +13,7 @@
 //#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
 //FIXME rm
 #define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
-#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (15)
+#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (1)
 
 extern uint8_t const CosTable[];
 extern uint8_t const CosTableSize;
@@ -82,7 +82,7 @@ void pattern_Timeslice(uint32_t const timeMS) {
 }
 
 // FIXME package
-static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase) {
+static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
    struct color_ColorHSV color = {.h = 0, .s = 255, .v = 255};
    for(int i = 0; i < 18; i++) {
       // adjust pitch? or just time between frames?
@@ -94,7 +94,7 @@ static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_
       v %= (int)CosTableSize;
       color.h = CosTable[v];
 
-      lighting_DrawRing(i, &color, durationMS);
+      lighting_DrawRing(i, &color, maxJitter, durationMS);
    }
 }
 
@@ -103,12 +103,13 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    iprintf("F%d ", a->frame);
 
    const uint32_t duration = getAnimationClockPeriod(a);
+   //TODO get max jitter from the ramp
+   const uint8_t maxJitter = 0;
 
-   applyAnimationFrame(a->frame, duration, a->huePhase);
+   applyAnimationFrame(a->frame, duration, a->huePhase, maxJitter);
 
    //TODO add bounded randomness (rand(255) - 128)? cast to u8 so it rolls?
 
-   // FIXME here?
    a->huePhase++;
 
    // cleanup state

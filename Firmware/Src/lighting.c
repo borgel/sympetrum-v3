@@ -69,22 +69,32 @@ void lighting_Timeslice(uint32_t const timeMS) {
 }
 
 
-void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color, uint32_t durationMS) {
+void lighting_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color, uint8_t maxJitter, uint32_t durationMS) {
    yabi_Error res;
+
+   // apply jitter
+   if(maxJitter) {
+      int16_t jitter = rand() % maxJitter;
+      // re-center around 0
+      jitter -= jitter / 2;
+      // apply jitter
+      color->h += jitter;
+   }
+
    res  = yabi_setChannel(x, color->h, durationMS);
    if(res != YABI_OK) {
       iprintf("YABI set returend %d\n", res);
    }
 
 }
-void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint32_t durationMS) {
+void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint8_t maxJitter, uint32_t durationMS) {
    if(r >= MATRIX_POLAR_RINGS) {
       iprintf("Illegal ring request (%d)\n", r);
       return;
    }
 
    for(int i = 0; MatrixMapPolar[r][i] != MATRIX_NO_LED; i++) {
-      lighting_DrawPixelLinear(MatrixMapPolar[r][i], color, durationMS);
+      lighting_DrawPixelLinear(MatrixMapPolar[r][i], color, maxJitter, durationMS);
    }
 }
 
@@ -94,9 +104,9 @@ static void setupYABI(void) {
 
    struct yabi_Config yc = {
       .frameStartCB           = NULL,
-      .frameEndCB             = NULL,        // LED infra handles this on its own
+      .frameEndCB             = NULL,
       .channelChangeCB        = _yabiSetChannelCB,
-      .channelChangeGroupCB   = NULL,        //TODO can we provide this?
+      .channelChangeGroupCB   = NULL,
       .interpolator           = _rolloverInterpolator,
       .hwConfig = {
          .setup               = _yabiHwInit,
