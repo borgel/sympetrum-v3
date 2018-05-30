@@ -38,7 +38,6 @@ struct State {
 
    // slow clock that drives everything else
    struct TerribleTimer beaconClock;
-   //TODO name?
    //fast clock that regulates the animation in progress
    struct TerribleTimer animationClock;
 };
@@ -69,7 +68,7 @@ void pattern_Timeslice(uint32_t const timeMS) {
       uint8_t* buf = IRGetBuff(&bytes);
       iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
 
-      //TODO reset both clocks
+      //TODO reset both clocks? or kick forward?
    }
 
    if(ttimer_HasElapsed(&state.beaconClock)) {
@@ -99,7 +98,7 @@ static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_
 }
 
 static void handleAnimationFrame(struct TerribleAnimation * const a) {
-   //TODO figure out this frame, and write it to YABI
+   //FIXME rm
    iprintf("F%d ", a->frame);
 
    const uint32_t duration = getAnimationClockPeriod(a);
@@ -107,8 +106,6 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    const uint8_t maxJitter = 0;
 
    applyAnimationFrame(a->frame, duration, a->huePhase, maxJitter);
-
-   //TODO add bounded randomness (rand(255) - 128)? cast to u8 so it rolls?
 
    a->huePhase++;
 
