@@ -167,6 +167,7 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //FIXME do this more elegantly?
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
+   color_CIECorrect(&rgb);
 
    *matrixMapped[x][y].r = rgb.r;
    *matrixMapped[x][y].g = rgb.g;
@@ -185,6 +186,7 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
    //FIXME do this more elegantly?
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
+   color_CIECorrect(&rgb);
 
    *matrixLinear[x].r = rgb.r;
    *matrixLinear[x].g = rgb.g;
