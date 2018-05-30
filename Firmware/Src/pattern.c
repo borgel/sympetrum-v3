@@ -2,12 +2,10 @@
 
 #include "ir.h"
 #include "terrible_timer.h"
+#include "lighting.h"
 #include "iprintf.h"
 
 #include "color.h"
-#include "led.h"
-
-//#include "yabi/yabi.h"
 
 #include <stdint.h>
 
@@ -95,7 +93,7 @@ static void applyAnimationFrame(uint8_t const frame, uint8_t phase) {
       color.h = CosTable[v];
 
       //TODO write to YABI
-      led_DrawRing(i, &color);
+      lighting_DrawRing(i, &color);
    }
 }
 
@@ -122,3 +120,4 @@ static uint32_t getAnimationClockPeriod(struct State const * const st) {
 
    return totalDuration / ANIMATION_FRAMES;
 }
+

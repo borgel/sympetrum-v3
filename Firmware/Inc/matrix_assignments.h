@@ -40,11 +40,11 @@ struct matrixMap {
 // the amount to add to each bank's 0-11 linear offset to get it's logical offset.
 // The linear string goes bank 1, 2, 4, 3 so this is slightly more complex than
 // intended.
-const uint8_t LinearMatrixBankOffsets[] = {0, 12, 36, 24};
+static const uint8_t LinearMatrixBankOffsets[] = {0, 12, 36, 24};
 
 //NOTE: These offsets are one LOWER than the schematic. In the schematic the nets
 //start at 1 and go through 36. Here they go from 0 through 35.
-const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
+static const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
    // bank, channel, row, col, color
    // bank 1, linearly 1st
    {0,  28,  0,  0,	MMC_RED   , 1},
@@ -205,7 +205,7 @@ const struct matrixMap MatrixMap[TOTAL_CHANNELS] = {
 // use a more convenient macro for a moment
 #define NO        (MATRIX_NO_LED)
 // 31 wide, 30 tall
-uint8_t const MatrixMapSparse[MATRIX_SPARSE_HEIGHT][MATRIX_SPARSE_WIDTH]  = {
+static const uint8_t const MatrixMapSparse[MATRIX_SPARSE_HEIGHT][MATRIX_SPARSE_WIDTH]  = {
    // put the linear ch number (0-47) in if it exists, and NO if it is blank
    // divided into 5x5 grids                        \/
 //  0  1  2  3  4   5  6  7  8  9   10 11 12 13 14  15 16 17 18 19  20 21 22 23 24  25 26 27 28 29  30
@@ -251,7 +251,7 @@ uint8_t const MatrixMapSparse[MATRIX_SPARSE_HEIGHT][MATRIX_SPARSE_WIDTH]  = {
 #define MATRIX_POLAR_RINGS    (18)
 
 // bounds set manually to encompass most LEDs in a ring
-uint8_t const MatrixMapPolar[MATRIX_POLAR_RINGS][9] = {
+static const uint8_t const MatrixMapPolar[MATRIX_POLAR_RINGS][9] = {
    // terminate each row with a NO
    {20, NO},
    {NO}, //blank

@@ -10,10 +10,11 @@ void led_MatrixStart(void);
 void led_MatrixStop(void);
 void led_SetGlobalBrightness(uint8_t bright);
 
-void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color);
+// FIXME remove deprecated
+//void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color);
 void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color);
-void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color);
-void led_DrawRing(uint8_t r, struct color_ColorHSV * const color);
+//void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color);
+//void led_DrawRing(uint8_t r, struct color_ColorHSV * const color);
 
 void led_ClearDisplay(void);
 
