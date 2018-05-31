@@ -77,7 +77,7 @@ int main(void)
 
          iprintf("Button Pressed\n");
          //TODO do something else
-         testDarknetIR();
+         pattern_DoSendBeacon();
       }
 
       pattern_Timeslice(HAL_GetTick());
@@ -97,6 +97,7 @@ void main_DoButton(bool const buttonPressed) {
       }
    }
    else {
+      // running the normal program
       if(lastUserButton == 0 && buttonPressed) {
          lastUserButton = HAL_GetTick();
       }
