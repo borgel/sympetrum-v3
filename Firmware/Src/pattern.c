@@ -10,16 +10,39 @@
 #include <stdint.h>
 
 // the UNCHANGING beacon clock period
-//#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
-//FIXME rm
-#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
-#define  ANIMATION_CLOCK_DEFAULT_DIVISOR        (1)
+//#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (120 * 1000)
+#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (30 * 1000)
+
+#define  MAX_JITTER                             (255)
 
 extern uint8_t const CosTable[];
 extern uint8_t const CosTableSize;
 
 //FIXME package into TA struct
 #define  ANIMATION_FRAMES                       (CosTableSize)
+
+struct InteractionRamp {
+   // divisor to the beacon clock to apply. larger numbers animate faster
+   uint8_t     clockDivisor;
+   // max allowed jitter. 255 will look random
+   uint8_t     maxJitter;
+};
+// the behavioral ramps that govern how the unit behaves when it sees friends
+static const struct InteractionRamp const interactionRamp[] = {
+   // divisor, maxJtter
+   // starting activity level
+   {1,   MAX_JITTER},
+   // one other device recently seen
+   {6,   20},
+   // many devices seen
+   {12,  0},
+};
+
+// used to travel up and down the interaction ramp
+enum InteractionRampChoice {
+   IRC_Increment,
+   IRC_Decrement,
+};
 
 struct TerribleAnimation {
    //TODO package these into a module somewhere
@@ -28,11 +51,16 @@ struct TerribleAnimation {
    // TODO use?
    //uint8_t period;
 
+   uint8_t maxJitter;
+
    uint8_t huePhase;
 };
 
 struct State {
    uint32_t lastUpdateMS;
+
+   // where on the interaction ramp we are
+   uint8_t  rampPosition;
 
    struct TerribleAnimation animation;
 
@@ -41,20 +69,24 @@ struct State {
    //fast clock that regulates the animation in progress
    struct TerribleTimer animationClock;
 };
-static struct State state = {.animation = {.clockDivisor = ANIMATION_CLOCK_DEFAULT_DIVISOR}};
+static struct State state = {0};
 
+static void applyRampState(struct State * const state);
 static void handleAnimationFrame(struct TerribleAnimation * const a);
 static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
 
 void pattern_Init(void) {
-   IRInit();
+   // set timers and config animation based on ramp position?
+   applyRampState(&state);
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
-   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state.animation));
 
    //FIXME rm
    iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
+
+   // safe to init IR now that animation etc is setup
+   IRInit();
 
    iprintf("Pattern Init Complete...\n");
 }
@@ -73,6 +105,8 @@ void pattern_Timeslice(uint32_t const timeMS) {
 
    if(ttimer_HasElapsed(&state.beaconClock)) {
       iprintf("Beacon!\n");
+
+      //FIXME rm
    }
    // pump the animation on a tick
    if(ttimer_HasElapsed(&state.animationClock)) {
@@ -102,10 +136,8 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    iprintf("F%d ", a->frame);
 
    const uint32_t duration = getAnimationClockPeriod(a);
-   //TODO get max jitter from the ramp
-   const uint8_t maxJitter = 0;
 
-   applyAnimationFrame(a->frame, duration, a->huePhase, maxJitter);
+   applyAnimationFrame(a->frame, duration, a->huePhase, a->maxJitter);
 
    a->huePhase++;
 
@@ -120,5 +152,20 @@ static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const a
    uint32_t const totalDuration = BEACON_CLOCK_DEFAULT_PERIOD_MS / animation->clockDivisor;
 
    return totalDuration / ANIMATION_FRAMES;
+}
+
+static void applyRampState(struct State * const state) {
+   // apply the settings in this level of the interaction ramp to the animations
+   iprintf("do ramp\n");
+
+   struct InteractionRamp const * const r = &interactionRamp[state->rampPosition];
+   struct TerribleAnimation * const ta = &state->animation;
+
+   // set max jitter in anim in state
+   ta->maxJitter = r->maxJitter;
+
+   // update duration
+   ta->clockDivisor = r->clockDivisor;
+   ttimer_Set(&state->animationClock, true, getAnimationClockPeriod(&state->animation));
 }
 
