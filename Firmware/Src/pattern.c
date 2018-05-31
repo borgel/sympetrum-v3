@@ -33,10 +33,11 @@ static const struct InteractionRamp const interactionRamp[] = {
    // starting activity level
    {1,   MAX_JITTER},
    // one other device recently seen
-   {6,   20},
+   {13,   30},
    // many devices seen
-   {12,  0},
+   {40,  0},
 };
+static int const interactionRampLength = sizeof(interactionRamp) / sizeof(interactionRamp[0]);
 
 // used to travel up and down the interaction ramp
 enum InteractionRampChoice {
@@ -71,13 +72,13 @@ struct State {
 };
 static struct State state = {0};
 
-static void applyRampState(struct State * const state);
+static void applyRampState(enum InteractionRampChoice const irc);
 static void handleAnimationFrame(struct TerribleAnimation * const a);
 static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
 
 void pattern_Init(void) {
-   // set timers and config animation based on ramp position?
-   applyRampState(&state);
+   // set timers and config animation based on ramp position (start at min)
+   applyRampState(IRC_Decrement);
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
@@ -89,6 +90,13 @@ void pattern_Init(void) {
    IRInit();
 
    iprintf("Pattern Init Complete...\n");
+}
+
+void pattern_DoSendBeacon(void) {
+   //TODO IR send a beacon
+
+   //FIXME rm
+   applyRampState(IRC_Increment);
 }
 
 void pattern_Timeslice(uint32_t const timeMS) {
@@ -154,18 +162,37 @@ static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const a
    return totalDuration / ANIMATION_FRAMES;
 }
 
-static void applyRampState(struct State * const state) {
+static void applyRampState(enum InteractionRampChoice const irc) {
    // apply the settings in this level of the interaction ramp to the animations
    iprintf("do ramp\n");
 
-   struct InteractionRamp const * const r = &interactionRamp[state->rampPosition];
-   struct TerribleAnimation * const ta = &state->animation;
+   //FIXME rm
+   iprintf("ramp from %d to ", state.rampPosition);
+
+   // resolve ramp movement first
+   if(irc == IRC_Increment) {
+      if(state.rampPosition + 1 < interactionRampLength) {
+         state.rampPosition++;
+      }
+   }
+   else {
+      if(state.rampPosition > 0) {
+         state.rampPosition--;
+      }
+   }
+   //FIXME rm
+   iprintf("%d\n", state.rampPosition);
+
+   struct InteractionRamp const * const r = &interactionRamp[state.rampPosition];
+   struct TerribleAnimation * const ta = &state.animation;
 
    // set max jitter in anim in state
    ta->maxJitter = r->maxJitter;
 
    // update duration
    ta->clockDivisor = r->clockDivisor;
-   ttimer_Set(&state->animationClock, true, getAnimationClockPeriod(&state->animation));
+   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state.animation));
+
+   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
 }
 
