@@ -1,17 +1,17 @@
 #include "pattern.h"
 
-#include "ir.h"
 #include "terrible_timer.h"
 #include "lighting.h"
 #include "iprintf.h"
+#include "beacon.h"
 
 #include "color.h"
 
 #include <stdint.h>
 
 // the UNCHANGING beacon clock period
-//#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (120 * 1000)
-#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (30 * 1000)
+#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (120 * 1000)
+#define  BEACON_CLOCK_BUMP_PERIOD               (BEACON_CLOCK_DEFAULT_PERIOD_MS / 10)
 
 #define  MAX_JITTER                             (255)
 
@@ -87,34 +87,43 @@ void pattern_Init(void) {
    iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
 
    // safe to init IR now that animation etc is setup
-   IRInit();
+   beacon_Init();
 
    iprintf("Pattern Init Complete...\n");
+
+   beacon_Send();
 }
 
 void pattern_DoSendBeacon(void) {
-   //TODO IR send a beacon
+   beacon_Send();
+
+   //TODO animation briefly to show we are sending
 
    //FIXME rm
-   applyRampState(IRC_Increment);
+   //applyRampState(IRC_Increment);
 }
 
 void pattern_Timeslice(uint32_t const timeMS) {
    // check for new messages
-   if(IRDataReady()) {
-      iprintf("Got Incoming IR Message ");
+   enum BeaconStatus bs = beacon_HaveReceived();
+   if(bs != BS_None) {
+      iprintf("Got an interesting beacon!\n");
 
-      uint32_t bytes = 0;
-      uint8_t* buf = IRGetBuff(&bytes);
-      iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
+      // TODO handle if it's special (BS_Special)
 
-      //TODO reset both clocks? or kick forward?
+      // bump main clock forward 10%
+      ttimer_Adjust(&state.beaconClock, BEACON_CLOCK_BUMP_PERIOD);
+
+      applyRampState(IRC_Increment);
    }
 
    if(ttimer_HasElapsed(&state.beaconClock)) {
       iprintf("Beacon!\n");
 
-      //FIXME rm
+      pattern_DoSendBeacon();
+
+      // decrement timer to keep the balance
+      applyRampState(IRC_Decrement);
    }
    // pump the animation on a tick
    if(ttimer_HasElapsed(&state.animationClock)) {
