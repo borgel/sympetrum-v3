@@ -62,8 +62,8 @@ int main(void)
    }
    TestMode = false;
 
-   pattern_Init();
    lighting_Init();
+   pattern_Init();
 
    //TODO enter on boot if button held down
    // fall into LED test patterns forever
