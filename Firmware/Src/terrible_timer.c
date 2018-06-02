@@ -20,8 +20,13 @@ void ttimer_Set(struct TerribleTimer* t, bool restartWhenDone, uint32_t const du
    ttimer_Restart(t);
 }
 
+void ttimer_Adjust(struct TerribleTimer* const t, int32_t adjustment) {
+   // adjust the timer by adjusting it's start point
+   t->startMS += adjustment;
+}
+
 void ttimer_Restart(struct TerribleTimer* t) {
-   //FIXME pass this in?
+   //FIXME pass this in? set a CB on init?
    t->startMS = HAL_GetTick();
    t->pendingComplete = false;
 }

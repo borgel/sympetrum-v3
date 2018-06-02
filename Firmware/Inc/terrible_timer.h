@@ -17,6 +17,9 @@ struct TerribleTimer {
 // configure and start a timer
 void ttimer_Set(struct TerribleTimer* t, bool restartWhenDone, uint32_t const durationMS);
 
+// apply a relative adjustment to a timer (running or not)
+void ttimer_Adjust(struct TerribleTimer* const t, int32_t adjustment);
+
 // reset and stop a timer
 void ttimer_Reset(struct TerribleTimer* t);
 
