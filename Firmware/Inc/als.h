@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-enum ALS_LightCondition {
+enum als_LightCondition {
    ALC_Start,
    ALC_IndoorDark,
    ALC_IndoorLight,
@@ -14,5 +14,5 @@ enum ALS_LightCondition {
 
 bool als_Init(void);
 void als_StartReading(void);
-bool als_GetLux(enum ALS_LightCondition * cond);
+bool als_GetLux(enum als_LightCondition * cond);
 

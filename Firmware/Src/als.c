@@ -55,7 +55,7 @@ void als_StartReading(void) {
 }
 
 // returns true when new data arrives
-bool als_GetLux(enum ALS_LightCondition * cond) {
+bool als_GetLux(enum als_LightCondition * cond) {
    bool res = false;
 
    if(conversionInProgress) {
@@ -76,7 +76,7 @@ bool als_GetLux(enum ALS_LightCondition * cond) {
             }
 
             // the previous one was it
-            *cond = (enum ALS_LightCondition)i;
+            *cond = (enum als_LightCondition)i;
             return res;
          }
       }

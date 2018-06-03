@@ -63,7 +63,7 @@ void lighting_Timeslice(uint32_t const timeMS) {
          return;
       }
 
-      enum ALS_LightCondition condition;
+      enum als_LightCondition condition;
       if(als_GetLux(&condition)) {
          // we got a valid reading. Reset things
          state.alsInProgress = false;
