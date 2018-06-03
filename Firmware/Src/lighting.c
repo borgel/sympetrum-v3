@@ -24,8 +24,9 @@ static const enum led_Brightness ALSEffectMap[] = {
 };
 
 struct State {
-   uint32_t alsInProgress;
-   uint32_t lastALS;
+   uint32_t                      alsInProgress;
+   uint32_t                      lastALS;
+   enum als_LightCondition       lastCondition;
 
    //the data which backs YABI's channels. At this level it's basically 48
    //hue buckets that are used internally to track setpoints etc
@@ -40,6 +41,9 @@ static void _yabiSetChannelCB(yabi_ChanID chan, yabi_ChanValue value);
 
 void lighting_Init(void) {
    setupYABI();
+
+   // start off assuming low brightness
+   state.lastCondition = ALC_IndoorDark;
 
    als_Init();
 
@@ -67,10 +71,14 @@ void lighting_Timeslice(uint32_t const timeMS) {
          state.alsInProgress = false;
          state.lastALS = timeMS;
 
-         iprintf("Light condition = %d/%d\n", condition, ALC_End - 1);
+         if(condition != state.lastCondition) {
+            state.lastCondition = condition;
 
-         // act on ALS reading
-         led_SetGlobalBrightness(ALSEffectMap[condition], 255);
+            iprintf("Light condition = %d/%d\n", condition, ALC_End - 1);
+
+            // act on ALS reading
+            led_SetGlobalBrightness(ALSEffectMap[condition], 255);
+         }
       }
    }
 }
