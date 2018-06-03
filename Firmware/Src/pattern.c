@@ -54,6 +54,7 @@ enum InteractionRampChoice {
 struct TerribleAnimation {
    uint8_t frame;
    uint8_t clockDivisor;
+   uint32_t frameLengthMS;
 
    uint8_t jitterSlew;
    uint8_t maxJitter;
@@ -93,8 +94,6 @@ void pattern_Init(void) {
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
-
-   iprintf("Animation frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
 
    // safe to init IR now that animation etc is setup
    beacon_Init();
@@ -187,11 +186,9 @@ static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_
 
 static void handleAnimationFrame(struct TerribleAnimation * const a) {
    //FIXME rm
-   iprintf("F%d ", a->frame);
+   //iprintf("F%d ", a->frame);
 
-   const uint32_t duration = getAnimationClockPeriod(a);
-
-   applyAnimationFrame(a->frame, duration, a->huePhase, a->maxJitter);
+   applyAnimationFrame(a->frame, a->frameLengthMS, a->huePhase, a->maxJitter);
 
    a->huePhase++;
 
@@ -234,8 +231,9 @@ static void applyRampState(enum InteractionRampChoice const irc) {
 
    // update duration
    ta->clockDivisor = r->clockDivisor;
-   ttimer_Set(&state.animationClock, true, getAnimationClockPeriod(&state.animation));
+   ta->frameLengthMS = getAnimationClockPeriod(ta);
+   ttimer_Set(&state.animationClock, true, ta->frameLengthMS);
 
-   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
+   iprintf("anim frame len is %d / %d = %d ms\n", BEACON_CLOCK_DEFAULT_PERIOD_MS, ta->clockDivisor, ta->frameLengthMS);
 }
 
