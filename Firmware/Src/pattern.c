@@ -8,6 +8,7 @@
 #include "color.h"
 
 #include <stdint.h>
+#include <stdlib.h>
 
 // the UNCHANGING beacon clock period
 #define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (120 * 1000)
@@ -26,16 +27,21 @@ struct InteractionRamp {
    uint8_t     clockDivisor;
    // max allowed jitter. 255 will look random
    uint8_t     maxJitter;
+   // max rate that jitter should change to reach the target
+   uint8_t     jitterSlew;
 };
 // the behavioral ramps that govern how the unit behaves when it sees friends
 static const struct InteractionRamp const interactionRamp[] = {
    // divisor, maxJtter
    // starting activity level
-   {1,   MAX_JITTER},
+   {1,   MAX_JITTER, 10},
    // one other device recently seen
-   {13,   30},
+   {13,  30,         5},
    // many devices seen
-   {40,  0},
+   {40,  0,          1},
+   {40,  0,          1},
+   // there are two final levels so that we can go "above" fully synced. Otherwise we tend to
+   // "bounce" against the top of the ramp and end up one slot short
 };
 static int const interactionRampLength = sizeof(interactionRamp) / sizeof(interactionRamp[0]);
 
@@ -49,6 +55,7 @@ struct TerribleAnimation {
    uint8_t frame;
    uint8_t clockDivisor;
 
+   uint8_t jitterSlew;
    uint8_t maxJitter;
 
    uint8_t huePhase;
@@ -58,7 +65,10 @@ struct State {
    uint32_t lastUpdateMS;
 
    // where on the interaction ramp we are
-   uint8_t  rampPosition;
+   uint8_t rampPosition;
+
+   // the jitter we want to get to
+   uint8_t jitterTarget;
 
    struct TerribleAnimation animation;
 
@@ -69,6 +79,7 @@ struct State {
 };
 static struct State state = {0};
 
+static void applyJitterChanges(void);
 static void applyRampState(enum InteractionRampChoice const irc);
 static void handleAnimationFrame(struct TerribleAnimation * const a);
 static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
@@ -76,6 +87,9 @@ static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const s
 void pattern_Init(void) {
    // set timers and config animation based on ramp position (start at min)
    applyRampState(IRC_Decrement);
+
+   // short circuit the ramp and set the correct starting jitter
+   state.animation.maxJitter = interactionRamp[0].maxJitter;
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
@@ -124,7 +138,39 @@ void pattern_Timeslice(uint32_t const timeMS) {
    // pump the animation on a tick
    if(ttimer_HasElapsed(&state.animationClock)) {
       handleAnimationFrame(&state.animation);
+
+      //TODO do this elsewhere?
+      // progress jitter towards the target
+      applyJitterChanges();
    }
+}
+
+static void applyJitterChanges(void) {
+   uint8_t const * const target = &state.jitterTarget;
+   uint8_t * const current = &state.animation.maxJitter;
+   uint8_t const slew = state.animation.jitterSlew;
+
+   if(*current == *target) {
+      return;
+   }
+
+   //FIXME rm
+   iprintf("jitter want %d. Changing from %d to ", *target, *current);
+
+   // if we are close, snap to the right value to avoid hunting forever
+   if(abs(*current - *target) <= slew) {
+      *current = *target;
+   }
+   else {
+      if(*current > *target) {
+         (*current) -= slew;
+      }
+      else if(*target > *current) {
+         (*current) += slew;
+      }
+   }
+   //FIXME rm
+   iprintf("%d\n", *current);
 }
 
 static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
@@ -182,8 +228,9 @@ static void applyRampState(enum InteractionRampChoice const irc) {
    struct InteractionRamp const * const r = &interactionRamp[state.rampPosition];
    struct TerribleAnimation * const ta = &state.animation;
 
-   // set max jitter in anim in state
-   ta->maxJitter = r->maxJitter;
+   // set target jitter to animate towards
+   state.jitterTarget = r->maxJitter;
+   ta->jitterSlew = r->jitterSlew;
 
    // update duration
    ta->clockDivisor = r->clockDivisor;
