@@ -14,6 +14,15 @@
 
 #define ALS_POLL_INTERVAL_MS        (10 * 1000)
 
+static const enum led_Brightness ALSEffectMap[] = {
+   [ALC_Start]             = LED_DIV_4,   // not used
+   [ALC_IndoorDark]        = LED_DIV_4,
+   [ALC_IndoorLight]       = LED_DIV_3,
+   [ALC_OutdoorShade]      = LED_DIV_1,
+   [ALC_Sunlight]          = LED_DIV_1,
+   [ALC_End]               = LED_DIV_4,   // not used
+};
+
 struct State {
    uint32_t alsInProgress;
    uint32_t lastALS;
@@ -34,7 +43,8 @@ void lighting_Init(void) {
 
    als_Init();
 
-   // TODO take and handle one ALS sample to set the tone
+   // start a reading to pickup ASAP
+   als_StartReading();
 
    // TODO coordinate animations
 
@@ -60,9 +70,10 @@ void lighting_Timeslice(uint32_t const timeMS) {
          state.lastALS = timeMS;
 
          // FIXME rm
-         iprintf("Light condition = %d\n", condition);
+         iprintf("Light condition = %d/%d\n", condition, ALC_End - 1);
 
-         //TODO act on ALS reading
+         // act on ALS reading
+         led_SetGlobalBrightness(ALSEffectMap[condition], 255);
       }
    }
 }
