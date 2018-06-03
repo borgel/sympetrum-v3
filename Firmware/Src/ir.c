@@ -331,12 +331,14 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    bool wasRXing = IRStopRX();
 
    //FIXME rm
+   /*
    iprintf("TX send start\n");
    iprintf("buf at 0x%x is %d long: [", buff, len);
    for (uint8_t byte = 0; byte < len; byte++) {
       iprintf("%c", buff[byte]);
    }
    iprintf("]\n");
+   */
 
    led_Pause();
 

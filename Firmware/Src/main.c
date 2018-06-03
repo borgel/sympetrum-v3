@@ -7,9 +7,8 @@
 #include "stm32f0xx_hal_tim.h"
 #include "iprintf.h"
 
-#include "led.h"
-#include "color.h"
-#include "als.h"
+#include "pattern.h"
+#include "lighting.h"
 #include "board_id.h"
 #include "test.h"
 #include "version.h"
@@ -59,52 +58,25 @@ int main(void)
    }
    TestMode = false;
 
-   //FIXME mv? into LED?
-   als_Init();
-
-   IRInit();
-
-   iprintf("Init LEDs\n");
-   led_Init();
-
-   //FIXME rm
-   //testDarknetIR();
-   //iprintf(">> DONE TEST DARKNET IR<<\n");
+   lighting_Init();
+   pattern_Init();
 
    //TODO enter on boot if button held down
    // fall into LED test patterns forever
-   TestModeLED = true;
-   TestPatterns_Start();
+   //TestModeLED = true;
+   //TestPatterns_Start();
 
-   int count = 0;
-   uint32_t bytes = 0;
    while(true) {
       // handle the button
       if(lastUserButton && (HAL_GetTick() - lastUserButton > BUTTON_DEBOUNCE_MS)) {
          lastUserButton = 0;
 
          iprintf("Button Pressed\n");
+         pattern_DoSendBeacon();
       }
 
-      if(IRDataReady()) {
-         iprintf("Got Full Message! ");
-
-         uint8_t* buf = IRGetBuff(&bytes);
-         iprintf("%d bytes: [%s]\n", bytes, (char*)buf);
-      }
-
-      /*
-      //FIXME rm
-      if(count > 100) {
-         count = 0;
-
-         uint32_t lux;
-         als_GetLux(&lux);
-
-         iprintf("Light Counts = %d\n", lux);
-      }
-      */
-      count++;
+      pattern_Timeslice(HAL_GetTick());
+      lighting_Timeslice(HAL_GetTick());
    }
 
    return 0;
@@ -120,6 +92,7 @@ void main_DoButton(bool const buttonPressed) {
       }
    }
    else {
+      // running the normal program
       if(lastUserButton == 0 && buttonPressed) {
          lastUserButton = HAL_GetTick();
       }

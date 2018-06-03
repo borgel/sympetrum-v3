@@ -10,7 +10,7 @@
 #include <stdbool.h>
 
 // 45 * 2 elements of a sin table
-static uint8_t HueTable[] = {
+static uint8_t const HueTable[] = {
          254,
          254,
          254,

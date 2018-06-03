@@ -89,6 +89,10 @@ static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
 static void _configureMapping(void);
 
+static void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color);
+static void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color);
+static void led_DrawRing(uint8_t r, struct color_ColorHSV * const color);
+
 void led_Init(void){
    // most HW init in platform_hw and hal_msp
 
@@ -142,8 +146,36 @@ void led_ClearDisplay(void) {
    _ForceUpdateRow();
 }
 
-void led_SetGlobalBrightness(uint8_t bright) {
-   matrixState.brightness = bright;
+void led_SetGlobalBrightness(enum led_Brightness bright, uint8_t sub) {
+   enum led_Divisor internalDiv;
+   switch(bright) {
+      default:
+      case LED_DIV_1:
+         internalDiv = DIVISOR_NONE;
+         break;
+      case LED_DIV_2:
+         internalDiv = DIVISOR_2;
+         break;
+      case LED_DIV_3:
+         internalDiv = DIVISOR_3;
+         break;
+      case LED_DIV_4:
+         internalDiv = DIVISOR_4;
+         break;
+   }
+
+   led_Pause();
+
+   // set enable bit and scalar on all channels
+   for(int i = 0; i < LED_CHANNELS; i++) {
+      _EnableChannel(i, internalDiv);
+   }
+   //led_UpdateDisplay();
+
+   led_Resume();
+
+   // set the max scalar (each channel can be set up to this)
+   matrixState.brightness = sub;
 }
 
 void led_Pause(void) {
@@ -155,7 +187,7 @@ void led_Resume(void) {
 }
 
 // Update the in-memory matrix representation
-void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
+static void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
@@ -167,6 +199,7 @@ void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    //FIXME do this more elegantly?
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
+   color_CIECorrect(&rgb);
 
    *matrixMapped[x][y].r = rgb.r;
    *matrixMapped[x][y].g = rgb.g;
@@ -185,13 +218,14 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
    //FIXME do this more elegantly?
    struct color_ColorRGB rgb;
    color_HSV2RGB(color, &rgb);
+   color_CIECorrect(&rgb);
 
    *matrixLinear[x].r = rgb.r;
    *matrixLinear[x].g = rgb.g;
    *matrixLinear[x].b = rgb.b;
 }
 
-void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
+static void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
    if(x >= MATRIX_SPARSE_WIDTH || y >= MATRIX_SPARSE_HEIGHT ) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
@@ -202,7 +236,7 @@ void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
    }
 }
 
-void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
+static void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
    if(r >= MATRIX_POLAR_RINGS) {
       iprintf("Illegal ring request (%d)\n", r);
       return;

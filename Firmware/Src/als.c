@@ -8,7 +8,21 @@
 #include "platform_hw.h"
 #include "iprintf.h"
 
+// NOTE these buckets might benefit from more real world tuning
+static uint32_t const buckets[] = {
+   [ALC_Start] = 0,
+   // 0 to next is next bucket
+   [ALC_IndoorDark] =   50,
+   [ALC_IndoorLight] =  2000,
+   [ALC_OutdoorShade] = 3700,
+   // implicitly, everything higher than outdoor shade is sunlight (saturation)
+   [ALC_Sunlight] =     10000,
+   [ALC_End] = 0,
+};
+
 static ADC_HandleTypeDef adcALS;
+
+static bool conversionInProgress;
 
 static bool _ADCConfig(void);
 
@@ -21,30 +35,54 @@ bool als_Init(void) {
    GPIO_InitStruct.Pull = GPIO_NOPULL;
    HAL_GPIO_Init(ADC_IN_Port, &GPIO_InitStruct);
 
+   //TODO start this in the background and pick it up later
+
    // low priority ADC interrupt
    //HAL_NVIC_SetPriority(ADC1_COMP_IRQn, 2, 0);
    //HAL_NVIC_EnableIRQ(ADC1_COMP_IRQn);
 
+   conversionInProgress = false;
+
    return _ADCConfig();
 }
 
-bool als_GetLux(uint32_t * lux) {
+void als_StartReading(void) {
+   if(!conversionInProgress) {
+      //save power by only enabling the ADC when we need it
+      HAL_ADC_Start(&adcALS);
+      conversionInProgress = true;
+   }
+}
+
+// returns true when new data arrives
+bool als_GetLux(enum als_LightCondition * cond) {
    bool res = false;
 
-   //save power by only enabling the ADC when we need it
-   HAL_ADC_Start(&adcALS);
+   if(conversionInProgress) {
+      if (HAL_ADC_PollForConversion(&adcALS, 1000000) == HAL_OK)
+      {
+         conversionInProgress = false;
+         res = true;
 
-   if (HAL_ADC_PollForConversion(&adcALS, 1000000) == HAL_OK)
-   {
-      res = true;
+         uint32_t rawRead;
+         rawRead  = HAL_ADC_GetValue(&adcALS);
 
-      //iprintf("ADC = %d\n", HAL_ADC_GetValue(&adcALS));
-      //TODO LUT + enum for buckets?
+         // convert into intensity buckets
+         // search downwards until we find the first bucket we are inside
+         *cond = ALC_Start + 1;
+         for(int i = ALC_End - 1; i > ALC_Start; i--) {
+            if(rawRead < buckets[i]) {
+               continue;
+            }
 
-      *lux = HAL_ADC_GetValue(&adcALS);
+            // the previous one was it
+            *cond = (enum als_LightCondition)i;
+            return res;
+         }
+      }
+
+      HAL_ADC_Stop(&adcALS);
    }
-
-   HAL_ADC_Stop(&adcALS);
 
    return res;
 }

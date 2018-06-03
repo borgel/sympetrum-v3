@@ -3,6 +3,8 @@
 
 #include <math.h>
 
+extern uint8_t const CIETable[];
+
 /*
  * Algorithm adapted from https://gist.github.com/hdznrrd/656996. Uses a little libmath.
  * */
@@ -64,5 +66,11 @@ void color_HSV2RGB(struct color_ColorHSV const *hsv, struct color_ColorRGB *rgb)
          rgb->g = round(255*p);
          rgb->b = round(255*q);
    }
+}
+
+void color_CIECorrect(struct color_ColorRGB * const rgb) {
+   rgb->r = CIETable[rgb->r];
+   rgb->g = CIETable[rgb->g];
+   rgb->b = CIETable[rgb->b];
 }
 
