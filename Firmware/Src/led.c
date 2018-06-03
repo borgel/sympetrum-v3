@@ -89,6 +89,10 @@ static bool _ForceUpdateRow(void);
 static bool _WriteRow(int rowIndex);
 static void _configureMapping(void);
 
+static void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color);
+static void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color);
+static void led_DrawRing(uint8_t r, struct color_ColorHSV * const color);
+
 void led_Init(void){
    // most HW init in platform_hw and hal_msp
 
@@ -183,7 +187,7 @@ void led_Resume(void) {
 }
 
 // Update the in-memory matrix representation
-void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
+static void led_DrawPixel(uint8_t x, uint8_t y, struct color_ColorHSV * color) {
    if(x >= MATRIX_ROWS || y >= MATRIX_COLS) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
@@ -221,7 +225,7 @@ void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color) {
    *matrixLinear[x].b = rgb.b;
 }
 
-void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
+static void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
    if(x >= MATRIX_SPARSE_WIDTH || y >= MATRIX_SPARSE_HEIGHT ) {
       iprintf("Illegal row/col request (x,y) (%d,%d)\n", x, y);
       return;
@@ -232,7 +236,7 @@ void led_DrawSparse(uint8_t x, uint8_t y, struct color_ColorHSV * const color) {
    }
 }
 
-void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
+static void led_DrawRing(uint8_t r, struct color_ColorHSV * const color) {
    if(r >= MATRIX_POLAR_RINGS) {
       iprintf("Illegal ring request (%d)\n", r);
       return;
