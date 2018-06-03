@@ -142,8 +142,36 @@ void led_ClearDisplay(void) {
    _ForceUpdateRow();
 }
 
-void led_SetGlobalBrightness(uint8_t bright) {
-   matrixState.brightness = bright;
+void led_SetGlobalBrightness(enum led_Brightness bright, uint8_t sub) {
+   enum led_Divisor internalDiv;
+   switch(bright) {
+      default:
+      case LED_DIV_1:
+         internalDiv = DIVISOR_NONE;
+         break;
+      case LED_DIV_2:
+         internalDiv = DIVISOR_2;
+         break;
+      case LED_DIV_3:
+         internalDiv = DIVISOR_3;
+         break;
+      case LED_DIV_4:
+         internalDiv = DIVISOR_4;
+         break;
+   }
+
+   led_Pause();
+
+   // set enable bit and scalar on all channels
+   for(int i = 0; i < LED_CHANNELS; i++) {
+      _EnableChannel(i, internalDiv);
+   }
+   //led_UpdateDisplay();
+
+   led_Resume();
+
+   // set the max scalar (each channel can be set up to this)
+   matrixState.brightness = sub;
 }
 
 void led_Pause(void) {

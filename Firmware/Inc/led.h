@@ -5,10 +5,17 @@
 
 #include "color.h"
 
+enum led_Brightness {
+   LED_DIV_1,     //bright
+   LED_DIV_2,
+   LED_DIV_3,
+   LED_DIV_4,     //dim
+};
+
 void led_Init(void);
 void led_MatrixStart(void);
 void led_MatrixStop(void);
-void led_SetGlobalBrightness(uint8_t bright);
+void led_SetGlobalBrightness(enum led_Brightness bright, uint8_t sub);
 
 void led_DrawPixelLinear(uint8_t x, struct color_ColorHSV * const color);
 
