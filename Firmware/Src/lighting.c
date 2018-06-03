@@ -46,8 +46,6 @@ void lighting_Init(void) {
    // start a reading to pickup ASAP
    als_StartReading();
 
-   // TODO coordinate animations
-
    // start the interpolator (we'll leave it running forever). This triggers an init of the LED HW
    yabi_setStarted(true);
 }
@@ -69,7 +67,6 @@ void lighting_Timeslice(uint32_t const timeMS) {
          state.alsInProgress = false;
          state.lastALS = timeMS;
 
-         // FIXME rm
          iprintf("Light condition = %d/%d\n", condition, ALC_End - 1);
 
          // act on ALS reading
@@ -108,7 +105,6 @@ void lighting_DrawRing(uint8_t r, struct color_ColorHSV * const color, uint8_t m
    }
 }
 
-// do setup cycle
 static void setupYABI(void) {
    yabi_Error yres;
 
@@ -126,7 +122,6 @@ static void setupYABI(void) {
    };
 
    struct yabi_ChannelStateConfiguration const csc = {
-      //FIXME needed?
       .channelStorage = state.yabiBacking,
       .numChannels = TOTAL_LOGICAL_LEDS,
    };
@@ -150,22 +145,11 @@ static void* const _yabiHwInit(void) {
 }
 
 /*
-   //FIXME text make sense?
- * This is the hook Yabi calls to set a channel. Yabi doesn't know about HSV, so
- * it uses a mapping scheme to control each parameter. This function is called by
- * Yabi, applies the mapping, then applies the change to the LEDs.
- * The mapping is the obvious one:
- * 0 - H
- * 1 - S
- * 2 - V
- *
- * Example channel math for Yabi setting channel 28
- * 28/3 = 9 (9th LED)
- * 28%3 = 1 (S conponent)
+ * This is called by YABI whenever it wants to set a value to an output device
  */
 static void _yabiSetChannelCB(yabi_ChanID chan, yabi_ChanValue value) {
    // set the H value for the relevant pixel
-   //TODO set S and V to anything in particular? are those reset in led?
+   // NOTE: V is reset inside LED
    struct color_ColorHSV c = {.h = value, .s = 255, .v = 255};
    led_DrawPixelLinear(chan, &c);
 }

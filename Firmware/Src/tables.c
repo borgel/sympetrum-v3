@@ -1,7 +1,6 @@
 #include <stdint.h>
 
-// 45 * 2 elements of a sin table
-// TODO increase granulartt to 1 deg (from 2)
+// TODO increase granulrity to 1 deg/setp? (from 2)
 uint8_t const CosTable[] = {
          254,
          254,

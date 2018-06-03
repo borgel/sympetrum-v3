@@ -9,6 +9,7 @@
 
 #define BEACON_STR_LEN     (12)    //<<########>>
 
+//TODO use these
 static char const * const SpecialBeaconIDs[] = {
    "12345678",
    "12345704",
@@ -24,14 +25,12 @@ void beacon_Send(void) {
    // don't send the trailing null
    IRTxBuff((uint8_t*)beacon, sizeof(beacon) - 1);
 
-   //FIXME rm
-   iprintf("%s", beacon);
+   iprintf("Sending [%s]\n", beacon);
 }
 
 enum BeaconStatus beacon_HaveReceived(void) {
    if(IRDataReady()) {
-      //FIXME rm?
-      iprintf("Got Incoming IR Message ");
+      iprintf("Incoming IR Message ");
 
       uint32_t bytes = 0;
       uint8_t* buf = IRGetBuff(&bytes);

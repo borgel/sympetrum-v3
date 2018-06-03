@@ -4,8 +4,6 @@
 
 #include <stdint.h>
 
-#define LIGHTING_DURATION_DEFAULT         (200)
-
 void lighting_Init(void);
 void lighting_Timeslice(uint32_t const timeMS);
 

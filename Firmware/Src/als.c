@@ -8,14 +8,14 @@
 #include "platform_hw.h"
 #include "iprintf.h"
 
-// TODO adjust these buckets
+// NOTE these buckets might benefit from more real world tuning
 static uint32_t const buckets[] = {
    [ALC_Start] = 0,
    // 0 to next is next bucket
    [ALC_IndoorDark] =   50,
    [ALC_IndoorLight] =  2000,
    [ALC_OutdoorShade] = 3700,
-   // implicitly, everything higher is sunlight (saturation)
+   // implicitly, everything higher than outdoor shade is sunlight (saturation)
    [ALC_Sunlight] =     10000,
    [ALC_End] = 0,
 };

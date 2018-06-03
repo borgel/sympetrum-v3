@@ -18,7 +18,7 @@
 extern uint8_t const CosTable[];
 extern uint8_t const CosTableSize;
 
-//FIXME package into TA struct
+//FIXME package into TerribleAnimation struct
 #define  ANIMATION_FRAMES                       (CosTableSize)
 
 struct InteractionRamp {
@@ -46,11 +46,8 @@ enum InteractionRampChoice {
 };
 
 struct TerribleAnimation {
-   //TODO package these into a module somewhere
    uint8_t frame;
    uint8_t clockDivisor;
-   // TODO use?
-   //uint8_t period;
 
    uint8_t maxJitter;
 
@@ -83,8 +80,7 @@ void pattern_Init(void) {
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
 
-   //FIXME rm
-   iprintf("anim frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
+   iprintf("Animation frame len is %d ms\n", getAnimationClockPeriod(&state.animation));
 
    // safe to init IR now that animation etc is setup
    beacon_Init();
@@ -131,15 +127,10 @@ void pattern_Timeslice(uint32_t const timeMS) {
    }
 }
 
-// FIXME package
 static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
    struct color_ColorHSV color = {.h = 0, .s = 255, .v = 255};
    for(int i = 0; i < 18; i++) {
-      // adjust pitch? or just time between frames?
-      // calculate what % done with the animation we are, then rescale it over table size
-      //FIXME can we just use phase + frame?
-      //int v = (((float)phase + (float)i * 1.0) / (float)ANIMATION_FRAMES) * (float)CosTableSize;
-      // TODO adjust pitch. 4 is towards max
+      // TODO adjust pitch with speed. 4 is towards max
       int v = frame + phase + ((float)i * 2.0);
       v %= (int)CosTableSize;
       color.h = CosTable[v];
@@ -173,10 +164,7 @@ static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const a
 
 static void applyRampState(enum InteractionRampChoice const irc) {
    // apply the settings in this level of the interaction ramp to the animations
-   iprintf("do ramp\n");
-
-   //FIXME rm
-   iprintf("ramp from %d to ", state.rampPosition);
+   iprintf("Ramp from %d -> ", state.rampPosition);
 
    // resolve ramp movement first
    if(irc == IRC_Increment) {
@@ -189,7 +177,6 @@ static void applyRampState(enum InteractionRampChoice const irc) {
          state.rampPosition--;
       }
    }
-   //FIXME rm
    iprintf("%d\n", state.rampPosition);
 
    struct InteractionRamp const * const r = &interactionRamp[state.rampPosition];

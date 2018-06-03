@@ -9,10 +9,6 @@
 
 #include "pattern.h"
 #include "lighting.h"
-//TODO prune these
-#include "led.h"
-#include "color.h"
-#include "als.h"
 #include "board_id.h"
 #include "test.h"
 #include "version.h"
@@ -76,7 +72,6 @@ int main(void)
          lastUserButton = 0;
 
          iprintf("Button Pressed\n");
-         //TODO do something else
          pattern_DoSendBeacon();
       }
 
