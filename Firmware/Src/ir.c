@@ -105,7 +105,7 @@ static crc_t crc_update(crc_t crc, const void *data, size_t data_len);
 // 48MHz clock divided by 32 gives us 1.5MHz timer clock
 // With a 4096 period, timer overflows in ~2.73ms
 //
-void TIM3_Init() {
+static void TIM3_Init() {
 
    TIM_ClockConfigTypeDef sClockSourceConfig;
 
@@ -179,7 +179,7 @@ static void TIM17_Init(void)
 }
 
 // Wait until a specified number of TIM3 clock ticks elapses
-void delayTicks(uint32_t ticks) {
+static void delayTicks(uint32_t ticks) {
    uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
 
    IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
@@ -204,13 +204,13 @@ void delayTicks(uint32_t ticks) {
 }
 
 // Start TIM3 to measure incoming pulse width
-void startIRPulseTimer() {
+static void startIRPulseTimer() {
    TIM3->CNT = 0;
    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
    HAL_TIM_Base_Start_IT(&htim3);
 }
 
-void stopIRPulseTimer() {
+static void stopIRPulseTimer() {
    HAL_TIM_Base_Stop_IT(&htim3);
 }
 
@@ -289,7 +289,7 @@ void ir_TestSetEnableTX(enum ir_TestTXEnable en) {
 }
 
 // Transmit start pulse
-void IRStartStop(void) {
+static void IRStartStop(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(START_TICKS);
 
@@ -298,7 +298,7 @@ void IRStartStop(void) {
 }
 
 // Transmit a zero
-void IRZero(void) {
+static void IRZero(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(MARK_TICKS);
 
@@ -307,7 +307,7 @@ void IRZero(void) {
 }
 
 // Transmit a one
-void IROne(void) {
+static void IROne(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(MARK_TICKS);
 
@@ -315,7 +315,7 @@ void IROne(void) {
    delayTicks(SPACE_ONE_TICKS);
 }
 
-void IRTxByte(uint8_t byte) {
+static void IRTxByte(uint8_t byte) {
    for (int bit = 7; bit >= 0; bit--) {
       if ((byte & (0x01 << bit)) == 0x00) {
          IRZero();
@@ -363,7 +363,7 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 }
 
 // Shift bits into rx buffer
-void IRRxBit(uint8_t newBit) {
+static void IRRxBit(uint8_t newBit) {
    uint32_t byte = irRxBits >> 3;
    uint32_t bit = irRxBits & 0x07;
 
@@ -471,7 +471,7 @@ uint8_t *IRGetBuff(uint32_t * len) {
 }
 
 // Receive GPIO state machine
-void IRStateMachine() {
+static void IRStateMachine() {
    uint32_t count = TIM3->CNT; // Save timer value as soon as possible
    uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin);
 
