@@ -195,6 +195,8 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    // cleanup state
    a->frame++;
    if(a->frame > ANIMATION_FRAMES) {
+      //FIXME rm
+      iprintf("A ");
       a->frame = 0;
    }
 }

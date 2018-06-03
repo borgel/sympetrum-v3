@@ -137,6 +137,7 @@ void _ConfigureLEDController(void) {
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
 
    led_ClearDisplay();
+
 }
 
 void led_ClearDisplay(void) {
@@ -275,6 +276,8 @@ void led_ForceRefresh(void) {
  * be flicker. Calling it from a 1kHz timer ISR seems to work well (yes, it's all run
  * in ISR context, even the i2c).
  */
+//FIXME rm
+static bool writeInProgress = false;
 void led_UpdateDisplay(void) {
    switch(matrixState.stage) {
       case DS_Start:
@@ -288,18 +291,30 @@ void led_UpdateDisplay(void) {
 
       case DS_BlankRow:
          // start i2c to write the blank row
+         //FIXME mv
+         writeInProgress = true;
          _WriteRow(ROW_BLANKING);
 
-         // progress SM
-         matrixState.stage = DS_DisableRow;
+         // progress SM if i2c is done sending
+         //FIXME better way?
+         //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
+         if(!writeInProgress) {
+            matrixState.stage = DS_DisableRow;
+         }
          break;
 
       case DS_WriteNewRow:
          // write new data to controller for this col while everything is off in ONE ARRAY SEND
+         //FIXME mv
+         writeInProgress = true;
          _WriteRow(matrixState.row);
 
          // progress SM
-         matrixState.stage = DS_EnableRow;
+         //FIXME better way?
+         //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
+         if(!writeInProgress) {
+            matrixState.stage = DS_EnableRow;
+         }
          break;
 
       case DS_EnableRow:
@@ -343,6 +358,13 @@ void led_UpdateDisplay(void) {
    }
 }
 
+// called by the HAL whenever an i2c transfer ends
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+   //FIXME rm
+   //iprintf("I");
+   writeInProgress = false;
+}
+
 // enable one bank and disable the others
 void led_TestExEnableBank(enum led_TestBankID bank) {
    for(int i = LED_TBANK_START; i < LED_TBANK_END; i++) {
@@ -382,7 +404,9 @@ static bool _WriteRow(int rowIndex) {
    //TODO DMA this
    memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
-   stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
+   // FIXME make IT?
+   //stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
+   stat = HAL_I2C_Master_Transmit_IT(&hi2c1, LED_CONT_ADDR, config, sizeof(config));
    if(stat != 0) {
       iprintf("Row Stat = 0x%x\n", stat);
       return false;
