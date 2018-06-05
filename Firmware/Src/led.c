@@ -279,8 +279,13 @@ void led_ForceRefresh(void) {
  * in ISR context, even the i2c).
  */
 //FIXME rm
-static bool writeInProgress = false;
-static int rowToWrite = 0;
+enum txState {
+   txs_Idle,
+   txs_Ongoing,
+   txs_Done,
+};
+static enum txState writeInProgress = txs_Idle;
+//static int rowToWrite = 0;
 void led_UpdateDisplay(void) {
    switch(matrixState.stage) {
       case DS_Start:
@@ -295,14 +300,15 @@ void led_UpdateDisplay(void) {
       case DS_BlankRow:
          // start i2c to write the blank row
          //FIXME mv
-         writeInProgress = true;
-         rowToWrite = ROW_BLANKING;
-         //_WriteRow(ROW_BLANKING);
+         //writeInProgress = true;
+         if(writeInProgress == txs_Idle) {
+            _WriteRow(ROW_BLANKING);
+         }
 
          // progress SM if i2c is done sending
          //FIXME better way?
          //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
-         if(!writeInProgress) {
+         if(writeInProgress == txs_Done) {
             matrixState.stage = DS_DisableRow;
          }
          break;
@@ -310,14 +316,15 @@ void led_UpdateDisplay(void) {
       case DS_WriteNewRow:
          // write new data to controller for this col while everything is off in ONE ARRAY SEND
          //FIXME mv
-         writeInProgress = true;
-         rowToWrite = matrixState.row;
-         //_WriteRow(matrixState.row);
+         //writeInProgress = true;
+         if(writeInProgress == txs_Idle) {
+            _WriteRow(matrixState.row);
+         }
 
          // progress SM
          //FIXME better way?
          //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
-         if(!writeInProgress) {
+         if(writeInProgress == txs_Done) {
             matrixState.stage = DS_EnableRow;
          }
          break;
@@ -337,7 +344,9 @@ void led_UpdateDisplay(void) {
 
             //progress SM
             //blank for one cycle
-            matrixState.stage = DS_BlankRow;
+            //matrixState.stage = DS_BlankRow;
+            // don't blank
+            matrixState.stage = DS_DisableRow;
          }
 
          break;
@@ -362,20 +371,22 @@ void led_UpdateDisplay(void) {
          break;
    }
 }
+static bool drawIt = false;
+// called by timer at 1kHz
+void led_SetDrawFlag(void) {
+   drawIt = true;
+}
+
 void led_Timeslice(void) {
-   // TODO if pending transfer, do it
-   if(writeInProgress) {
-      _WriteRow(rowToWrite);
-      rowToWrite = -1;
-      // writeInProgress is unset by TX complete callback
+   if(drawIt) {
+      drawIt = false;
+      led_UpdateDisplay();
    }
 }
 
 // called by the HAL whenever an i2c transfer ends
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
-   //FIXME rm
-   //iprintf("I");
-   writeInProgress = false;
+   writeInProgress = txs_Done;
 }
 
 // enable one bank and disable the others
@@ -419,9 +430,10 @@ static bool _WriteRow(int rowIndex) {
 
    // FIXME make IT?
    //stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
+   writeInProgress = txs_Ongoing;
    stat = HAL_I2C_Master_Transmit_IT(&hi2c1, LED_CONT_ADDR, config, sizeof(config));
    if(stat != 0) {
-      iprintf("Row Stat = 0x%x\n", stat);
+      iprintf("WRow Stat = 0x%x\n", stat);
       return false;
    }
    return true;
