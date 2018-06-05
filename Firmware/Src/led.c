@@ -255,9 +255,11 @@ void led_ForceRefresh(void) {
       //blanking is only needed if we aren't always displaying colors. If we are then
       // ghosting isn't very visible and this just slows things down
       _WriteRow(ROW_BLANKING);
+      while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY) {};
 
       //write new data to controller for this col while everything is off in ONE ARRAY SEND
       _WriteRow(i);
+      while(HAL_I2C_GetState(&hi2c1) != HAL_I2C_STATE_READY) {};
 
       //enable the col to show
       HAL_GPIO_WritePin(MatrixPortLUT[i], MatrixPinLUT[i], GPIO_PIN_RESET);
@@ -278,6 +280,7 @@ void led_ForceRefresh(void) {
  */
 //FIXME rm
 static bool writeInProgress = false;
+static int rowToWrite = 0;
 void led_UpdateDisplay(void) {
    switch(matrixState.stage) {
       case DS_Start:
@@ -293,7 +296,8 @@ void led_UpdateDisplay(void) {
          // start i2c to write the blank row
          //FIXME mv
          writeInProgress = true;
-         _WriteRow(ROW_BLANKING);
+         rowToWrite = ROW_BLANKING;
+         //_WriteRow(ROW_BLANKING);
 
          // progress SM if i2c is done sending
          //FIXME better way?
@@ -307,7 +311,8 @@ void led_UpdateDisplay(void) {
          // write new data to controller for this col while everything is off in ONE ARRAY SEND
          //FIXME mv
          writeInProgress = true;
-         _WriteRow(matrixState.row);
+         rowToWrite = matrixState.row;
+         //_WriteRow(matrixState.row);
 
          // progress SM
          //FIXME better way?
@@ -355,6 +360,14 @@ void led_UpdateDisplay(void) {
          //should never happen
          iprintf("Matrix SM hit default state. Why?\n");
          break;
+   }
+}
+void led_Timeslice(void) {
+   // TODO if pending transfer, do it
+   if(writeInProgress) {
+      _WriteRow(rowToWrite);
+      rowToWrite = -1;
+      // writeInProgress is unset by TX complete callback
    }
 }
 

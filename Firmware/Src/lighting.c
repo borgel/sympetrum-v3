@@ -58,6 +58,9 @@ void lighting_Timeslice(uint32_t const timeMS) {
    // always share time with YABI
    yabi_giveTime(timeMS);
 
+   // make sure the LED infra can start transfers
+   led_Timeslice();
+
    if(timeMS - state.lastALS > ALS_POLL_INTERVAL_MS) {
       if(!state.alsInProgress) {
          state.alsInProgress = true;

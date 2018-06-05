@@ -25,8 +25,11 @@ void led_ClearDisplay(void);
 void led_Pause(void);
 void led_Resume(void);
 
-// Pump frequently to draw the matrix
+// Pump from an IRQ to draw the matrix
 void led_UpdateDisplay(void);
+// Pump just as frequently to start i2c transfers to the LED controller
+void led_Timeslice(void);
+
 // call to complete an entire draw cycle immediately
 void led_ForceRefresh(void);
 
