@@ -100,6 +100,8 @@ void led_Init(void){
 
    // start up the frame clock. After this, it will be drawing to the display
    _ConfigureFrameClock();
+
+   iprintf("LED Init Done\n");
 }
 
 void led_TestInit(void) {
@@ -359,7 +361,7 @@ void led_UpdateDisplay(void) {
             //blank for one cycle
             matrixState.stage = DS_BlankRow;
             //FIXME rm
-            //matrixState.stage = DS_DisableRow;
+            matrixState.stage = DS_DisableRow;
          }
 
          break;
