@@ -72,7 +72,7 @@ struct ColorPointer {
 // for blanking.
 // 4 arrays of 36 bytes long. Physical LEDs divide into groups of 3
 //                           x              y
-static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
+static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS] = {0};
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 // mapping layer for accessing the array linearly
@@ -115,6 +115,9 @@ void _ConfigureLEDController(void) {
    uint8_t data[63 + 10] = {};
 
    matrixState.brightness = 255;
+
+   // clear display
+   memset(matrixRaw, 0, sizeof(matrixRaw));
 
    _configureMapping();
 
