@@ -174,10 +174,13 @@ static void applyJitterChanges(void) {
 
 static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
    struct color_ColorHSV color = {.h = 0, .s = 255, .v = 255};
+
+   uint32_t v;
    for(int i = 0; i < 18; i++) {
-      // TODO adjust pitch with speed. 4 is towards max
-      int v = frame + phase + ((float)i * 2.0);
-      v %= (int)CosTableSize;
+
+      // TODO adjust pitch with speed. 9 is towards max
+      v = frame + phase + ((float)i * 4.0);
+      v %= CosTableSize;
       color.h = CosTable[v];
 
       lighting_DrawRing(i, &color, maxJitter, durationMS);
@@ -191,6 +194,9 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    applyAnimationFrame(a->frame, a->frameLengthMS, a->huePhase, a->maxJitter);
 
    a->huePhase++;
+   if(a->huePhase >  ANIMATION_FRAMES) {
+      a->huePhase = 0;
+   }
 
    // cleanup state
    a->frame++;
