@@ -26,21 +26,6 @@ static uint32_t lastUserButton = 0;
 static bool TestMode = false;
 static bool TestModeLED = false;
 
-static void testDarknetIR(void) {
-   iprintf("Darknet TX\n");
-
-   /*
-   uint8_t b = 0x00;
-   IRTxBuff(&b, 1);
-   */
-
-   uint8_t buf[] = "Test Str";
-   iprintf("TX...");
-   IRTxBuff(buf, sizeof(buf) - 1);
-   iprintf("done\n");
-   iprintf("have %d bytes\n", IRBytesAvailable());
-}
-
 int main(void)
 {
    HAL_Init();

@@ -38,7 +38,6 @@
 #include "ir_test.h"
 #include "platform_hw.h"
 #include "iprintf.h"
-#include "led.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
 #include "stm32f0xx_hal_gpio.h"
@@ -330,18 +329,6 @@ void IRTxBuff(uint8_t *buff, size_t len) {
 
    bool wasRXing = IRStopRX();
 
-   //FIXME rm
-   /*
-   iprintf("TX send start\n");
-   iprintf("buf at 0x%x is %d long: [", buff, len);
-   for (uint8_t byte = 0; byte < len; byte++) {
-      iprintf("%c", buff[byte]);
-   }
-   iprintf("]\n");
-   */
-
-   led_Pause();
-
    IRStartStop();
 
    for (uint8_t byte = 0; byte < len; byte++) {
@@ -354,8 +341,6 @@ void IRTxBuff(uint8_t *buff, size_t len) {
    IRTxByte(crc);
 
    IRStartStop();
-
-   led_Resume();
 
    if(wasRXing) {
       IRStartRx();
