@@ -11,7 +11,7 @@
 #include <stdlib.h>
 
 // the UNCHANGING beacon clock period
-#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (120 * 1000)
+#define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
 #define  BEACON_CLOCK_BUMP_PERIOD               (BEACON_CLOCK_DEFAULT_PERIOD_MS / 10)
 
 #define  MAX_JITTER                             (255)
@@ -36,10 +36,10 @@ static const struct InteractionRamp const interactionRamp[] = {
    // starting activity level
    {1,   MAX_JITTER, 10},
    // one other device recently seen
-   {14,  30,         5},
+   {7,  30,         5},
    // many devices seen
-   {47,  0,          1},
-   {47,  0,          1},
+   {23,  0,          1},
+   {23,  0,          1},
    // there are two final levels so that we can go "above" fully synced. Otherwise we tend to
    // "bounce" against the top of the ramp and end up one slot short
 };
