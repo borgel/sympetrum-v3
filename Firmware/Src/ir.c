@@ -85,6 +85,7 @@ static volatile uint8_t irRxBuff[IR_RX_BUFF_SIZE];
 static volatile uint32_t irRxBits;
 static volatile crc_t crc;
 static bool ShouldRX = false;
+static bool rxError = false;
 
 TIM_HandleTypeDef htim3;
 static TIM_HandleTypeDef htim17;
@@ -394,6 +395,7 @@ static void IRStartRx() {
       __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
       HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
       ShouldRX = true;
+      rxError = false;
    }
 }
 
@@ -438,6 +440,13 @@ int32_t IRGetState() {
 
 // Return true if a packet has been received
 bool IRDataReady() {
+   //FIXME rm
+   if(rxError) {
+      iprintf("RX error detected, resetting\n");
+      IRStopRX();
+      IRStartRx();
+   }
+
    if (IRState == IR_RX_DONE) {
       return true;
    } else {
@@ -460,7 +469,6 @@ uint8_t *IRGetBuff(uint32_t * len) {
 
 // Receive GPIO state machine
 static void IRStateMachine() {
-   bool rxErrorOccured = false;
    uint32_t count = TIM3->CNT; // Save timer value as soon as possible
    uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin);
 
@@ -503,7 +511,6 @@ static void IRStateMachine() {
             IRState = IR_RX_MARK;
          } else {
             IRState = IR_RX_ERR;
-            rxErrorOccured = true;
          }
          break;
       }
@@ -512,7 +519,6 @@ static void IRStateMachine() {
       {
          if (pinState == 0) {
             IRState = IR_RX_ERR;
-            rxErrorOccured = true;
             break;
          }
 
@@ -522,17 +528,14 @@ static void IRStateMachine() {
                IRState = IR_RX_DONE;
             } else {
                IRState = IR_RX_ERR_CRC;
-               rxErrorOccured = true;
             }
 
-            HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
             ShouldRX = false;
          } else if (count > MARK_TICKS) {
             startIRPulseTimer(); // Start timing space
             IRState = IR_RX_SPACE;
          } else {
             IRState = IR_RX_ERR;
-            rxErrorOccured = true;
          }
          break;
       }
@@ -549,14 +552,12 @@ static void IRStateMachine() {
             } else {
                // Something bad happened
                IRState = IR_RX_ERR;
-               rxErrorOccured = true;
             }
          }
          break;
       }
 
       case IR_RX_DONE:
-        // check CRC if there is one?
         break;
 
       default:
@@ -572,14 +573,21 @@ static void IRStateMachine() {
    */
 
    // if there was an RX error, reset and begin waiting again
-   //if(rxErrorOccured) {
    if (IRState < 0) {
       //FIXME rm
-      //iprintf("X");
+      iprintf("X");
+
+      stopIRPulseTimer();
 
       irRxBits = 0;
       IRState = IR_RX_IDLE;
       ShouldRX = true;
+
+      rxError = true;
+   }
+   // this occurs when a message finishes
+   else if(IRState == IR_RX_DONE && !ShouldRX) {
+      HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
    }
 }
 
