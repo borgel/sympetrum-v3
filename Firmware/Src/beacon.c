@@ -8,7 +8,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#define BEACON_STR_LEN     (12)    //<<########>>
+//#define BEACON_STR_LEN     (12)    //<<########>>
+#define BEACON_STR_LEN     (2)    //<<########>>
 
 //TODO use these
 static char const * const SpecialBeaconIDs[] = {
@@ -22,7 +23,8 @@ void beacon_Init(void) {
 
 void beacon_Send(void) {
    char beacon[BEACON_STR_LEN + 1] = {0};
-   snprintf(beacon, sizeof(beacon), "<<%08lX>>", bid_GetID());
+   //snprintf(beacon, sizeof(beacon), "<<%08lX>>", bid_GetID());
+   snprintf(beacon, sizeof(beacon), "B%0X", bid_GetIDCrc());
 
    iprintf("Sending [%s]\n", beacon);
 
@@ -53,7 +55,13 @@ enum BeaconStatus beacon_HaveReceived(void) {
          iprintf("Got %d bytes, not %d\n", bytes, BEACON_STR_LEN);
          return BS_None;
       }
+      /*
       if(!(buf[0] == '<' && buf[1] == '<' && buf[10] == '>' && buf[11] == '>')) {
+         iprintf("Beacon string formatted incorrectly\n");
+         return BS_None;
+      }
+      */
+      if(buf[0] != 'B') {
          iprintf("Beacon string formatted incorrectly\n");
          return BS_None;
       }
