@@ -34,12 +34,12 @@ struct InteractionRamp {
 static const struct InteractionRamp const interactionRamp[] = {
    // divisor, maxJtter
    // starting activity level
-   {1,   MAX_JITTER, 10},
+   {1,   MAX_JITTER,    10},
    // one other device recently seen
-   {7,  30,         5},
+   {7,  30,             5},
    // many devices seen
-   {23,  0,          1},
-   {23,  0,          1},
+   {23,  0,             1},
+   {23,  0,             1},
    // there are two final levels so that we can go "above" fully synced. Otherwise we tend to
    // "bounce" against the top of the ramp and end up one slot short
 };
@@ -71,6 +71,9 @@ struct State {
    // the jitter we want to get to
    uint8_t jitterTarget;
 
+   // the frame rate we want to get to. calculated via clock divisor
+   uint32_t frameLengthTarget;
+
    struct TerribleAnimation animation;
 
    // slow clock that drives everything else
@@ -81,6 +84,7 @@ struct State {
 static struct State state = {0};
 
 static void applyJitterChanges(void);
+static void applyFrameLengthChanges(void);
 static void applyRampState(enum InteractionRampChoice const irc);
 static void handleAnimationFrame(struct TerribleAnimation * const a);
 static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
@@ -89,8 +93,9 @@ void pattern_Init(void) {
    // set timers and config animation based on ramp position (start at min)
    applyRampState(IRC_Decrement);
 
-   // short circuit the ramp and set the correct starting jitter
+   // short circuit the ramp and set the correct starting jitter and frame duration
    state.animation.maxJitter = interactionRamp[0].maxJitter;
+   state.animation.frameLengthMS = getAnimationClockPeriod(&state.animation);
 
    // setup the timers
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
@@ -141,7 +146,37 @@ void pattern_Timeslice(uint32_t const timeMS) {
       //TODO do this elsewhere?
       // progress jitter towards the target
       applyJitterChanges();
+
+      // progress frame duration towards target
+      applyFrameLengthChanges();
    }
+}
+
+static void applyFrameLengthChanges(void) {
+   uint32_t const * const target = &state.frameLengthTarget;
+   uint32_t * const current = &state.animation.frameLengthMS;
+   uint8_t const slew = state.animation.jitterSlew;
+
+   if(*current == *target) {
+      return;
+   }
+
+   iprintf("FL want %d. Change from %d -> ", *target, *current);
+
+   // if we are close, snap to the right value to avoid hunting forever
+   if(abs(*current - *target) <= slew) {
+      *current = *target;
+   }
+   else {
+      if(*current > *target) {
+         (*current) -= slew;
+      }
+      else if(*target > *current) {
+         (*current) += slew;
+      }
+   }
+
+   iprintf("%d\n", *current);
 }
 
 static void applyJitterChanges(void) {
@@ -168,6 +203,11 @@ static void applyJitterChanges(void) {
          (*current) += slew;
       }
    }
+
+   // FIXME use relative nudge?
+   // make sure the clock is correctly set
+   ttimer_Set(&state.animationClock, true, *current);
+
    //FIXME rm
    iprintf("%d\n", *current);
 }
@@ -239,9 +279,9 @@ static void applyRampState(enum InteractionRampChoice const irc) {
 
    // update duration
    ta->clockDivisor = r->clockDivisor;
-   ta->frameLengthMS = getAnimationClockPeriod(ta);
-   ttimer_Set(&state.animationClock, true, ta->frameLengthMS);
 
-   iprintf("anim frame len is %d / %d = %d ms\n", BEACON_CLOCK_DEFAULT_PERIOD_MS, ta->clockDivisor, ta->frameLengthMS);
+   state.frameLengthTarget = getAnimationClockPeriod(ta);
+
+   iprintf("Anim frame len will be %d ms / %d = %d ms\n", BEACON_CLOCK_DEFAULT_PERIOD_MS, ta->clockDivisor, state.frameLengthTarget);
 }
 
