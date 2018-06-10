@@ -250,6 +250,7 @@ void IRInit(void) {
    HAL_Delay(10);
 
    // always listen
+   ShouldRX = false;
    IRStartRx();
 
    isInit = true;
@@ -327,24 +328,22 @@ static void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
    crc = crc_init();
 
-   bool wasRXing = IRStopRX();
+   // stop listening
+   IRStopRX();
 
+   // send the start state
    IRStartStop();
-
    for (uint8_t byte = 0; byte < len; byte++) {
       IRTxByte(buff[byte]);
       crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
    }
 
    crc = crc_finalize(crc);
-
    IRTxByte(crc);
 
    IRStartStop();
 
-   if(wasRXing) {
-      IRStartRx();
-   }
+   IRStartRx();
 }
 
 // Shift bits into rx buffer
@@ -373,9 +372,11 @@ static void IRRxBit(uint8_t newBit) {
 }
 
 int32_t IRBytesAvailable() {
+   // convert bits to bytes
    int32_t bytes = (irRxBits >> 3);
 
-   if ((IRState == IR_RX_DONE) && (bytes > 0)) {
+   // only count bytes as avail if we are done receiving
+   if ((IRState == IR_RX_DONE) && (bytes - 1 > 0)) {
       // Don't count CRC byte!
       return bytes - 1;
    } else {
@@ -448,15 +449,18 @@ bool IRDataReady() {
 // to get this message's data
 uint8_t *IRGetBuff(uint32_t * len) {
    *len = IRBytesAvailable();
+   uint8_t * o = (uint8_t *) irRxBuff;
 
+   iprintf("Got buf, resetting\n");
    IRStopRX();
    IRStartRx();
 
-   return (uint8_t *) irRxBuff;
+   return o;
 }
 
 // Receive GPIO state machine
 static void IRStateMachine() {
+   bool rxErrorOccured = false;
    uint32_t count = TIM3->CNT; // Save timer value as soon as possible
    uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin);
 
@@ -499,6 +503,7 @@ static void IRStateMachine() {
             IRState = IR_RX_MARK;
          } else {
             IRState = IR_RX_ERR;
+            rxErrorOccured = true;
          }
          break;
       }
@@ -507,6 +512,7 @@ static void IRStateMachine() {
       {
          if (pinState == 0) {
             IRState = IR_RX_ERR;
+            rxErrorOccured = true;
             break;
          }
 
@@ -516,6 +522,7 @@ static void IRStateMachine() {
                IRState = IR_RX_DONE;
             } else {
                IRState = IR_RX_ERR_CRC;
+               rxErrorOccured = true;
             }
 
             HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
@@ -525,6 +532,7 @@ static void IRStateMachine() {
             IRState = IR_RX_SPACE;
          } else {
             IRState = IR_RX_ERR;
+            rxErrorOccured = true;
          }
          break;
       }
@@ -541,6 +549,7 @@ static void IRStateMachine() {
             } else {
                // Something bad happened
                IRState = IR_RX_ERR;
+               rxErrorOccured = true;
             }
          }
          break;
@@ -554,10 +563,23 @@ static void IRStateMachine() {
          break;
    }
 
+   /*
    // Disable interrupts if an error occurred (until user resets it)
    if (IRState < 0) {
       HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
       ShouldRX = false;
+   }
+   */
+
+   // if there was an RX error, reset and begin waiting again
+   //if(rxErrorOccured) {
+   if (IRState < 0) {
+      //FIXME rm
+      //iprintf("X");
+
+      irRxBits = 0;
+      IRState = IR_RX_IDLE;
+      ShouldRX = true;
    }
 }
 

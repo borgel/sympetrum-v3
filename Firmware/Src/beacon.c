@@ -6,6 +6,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #define BEACON_STR_LEN     (12)    //<<########>>
 
@@ -22,10 +23,11 @@ void beacon_Init(void) {
 void beacon_Send(void) {
    char beacon[BEACON_STR_LEN + 1] = {0};
    snprintf(beacon, sizeof(beacon), "<<%08lX>>", bid_GetID());
-   // don't send the trailing null
-   IRTxBuff((uint8_t*)beacon, sizeof(beacon) - 1);
 
    iprintf("Sending [%s]\n", beacon);
+
+   // don't send the trailing null
+   IRTxBuff((uint8_t*)beacon, sizeof(beacon) - 1);
 }
 
 enum BeaconStatus beacon_HaveReceived(void) {
@@ -35,12 +37,14 @@ enum BeaconStatus beacon_HaveReceived(void) {
       uint32_t bytes = 0;
       uint8_t* buf = IRGetBuff(&bytes);
 
-      iprintf("%d bytes [%12s]\n", bytes, buf);
-
       // check if it's valid at all beacon
       if(bytes == 0 || buf == NULL) {
          return BS_None;
       }
+
+      char safebuf[BEACON_STR_LEN + 1] = {'\0'};
+      memcpy(safebuf, buf, bytes);
+      iprintf("%d bytes [%s]\n", bytes, safebuf);
 
       // TODO switch on first char to see what it is (draw string, etc)
 

@@ -161,7 +161,8 @@ static void applyFrameLengthChanges(void) {
       return;
    }
 
-   iprintf("FL want %d. Change from %d -> ", *target, *current);
+   // FIXME rm
+   //iprintf("FL want %d. Change from %d -> ", *target, *current);
 
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
@@ -176,7 +177,8 @@ static void applyFrameLengthChanges(void) {
       }
    }
 
-   iprintf("%d\n", *current);
+   // FIXME rm
+   //iprintf("%d\n", *current);
 }
 
 static void applyJitterChanges(void) {
@@ -189,7 +191,7 @@ static void applyJitterChanges(void) {
    }
 
    //FIXME rm
-   iprintf("jitter want %d. Changing from %d to ", *target, *current);
+   //iprintf("jitter want %d. Changing from %d to ", *target, *current);
 
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
@@ -209,7 +211,7 @@ static void applyJitterChanges(void) {
    ttimer_Set(&state.animationClock, true, *current);
 
    //FIXME rm
-   iprintf("%d\n", *current);
+   //iprintf("%d\n", *current);
 }
 
 static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
