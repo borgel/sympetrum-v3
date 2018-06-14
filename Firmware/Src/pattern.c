@@ -34,12 +34,12 @@ struct InteractionRamp {
 static const struct InteractionRamp const interactionRamp[] = {
    // divisor, maxJtter
    // starting activity level
-   {1,   MAX_JITTER,    10},
+   {1,   MAX_JITTER,    20},
    // one other device recently seen
-   {7,  30,             5},
+   {7,  30,             8},
    // many devices seen
-   {23,  0,             1},
-   {23,  0,             1},
+   {23,  0,             2},
+   {23,  0,             2},
    // there are two final levels so that we can go "above" fully synced. Otherwise we tend to
    // "bounce" against the top of the ramp and end up one slot short
 };
