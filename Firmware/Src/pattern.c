@@ -12,7 +12,7 @@
 
 // the UNCHANGING beacon clock period
 #define  BEACON_CLOCK_DEFAULT_PERIOD_MS         (60 * 1000)
-#define  BEACON_CLOCK_BUMP_PERIOD               (BEACON_CLOCK_DEFAULT_PERIOD_MS / 10)
+#define  BEACON_CLOCK_BUMP_PERIOD               (-1 * (BEACON_CLOCK_DEFAULT_PERIOD_MS / 10))
 
 #define  MAX_JITTER                             (255)
 
