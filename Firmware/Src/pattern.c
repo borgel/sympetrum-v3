@@ -90,14 +90,17 @@ static void handleAnimationFrame(struct TerribleAnimation * const a);
 static uint32_t getAnimationClockPeriod(struct TerribleAnimation const * const st);
 
 void pattern_Init(void) {
+   // short circuit the ramp and set the correct starting jitter and frame duration
+   state.animation.maxJitter = interactionRamp[0].maxJitter;
+
    // set timers and config animation based on ramp position (start at min)
    applyRampState(IRC_Decrement);
 
-   // short circuit the ramp and set the correct starting jitter and frame duration
-   state.animation.maxJitter = interactionRamp[0].maxJitter;
+   // kick the animation clock
    state.animation.frameLengthMS = getAnimationClockPeriod(&state.animation);
+   ttimer_Set(&state.animationClock, true, state.animation.frameLengthMS);
 
-   // setup the timers
+   // setup the main timer
    ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
 
    // safe to init IR now that animation etc is setup
@@ -132,7 +135,7 @@ void pattern_Timeslice(uint32_t const timeMS) {
    }
 
    if(ttimer_HasElapsed(&state.beaconClock)) {
-      iprintf("Beacon!\n");
+      iprintf("Send Beacon! ");
 
       pattern_DoSendBeacon();
 
@@ -166,6 +169,7 @@ static void applyFrameLengthChanges(void) {
 
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
+      iprintf("Frame Length Slew Complete\n");
       *current = *target;
    }
    else {
@@ -179,6 +183,9 @@ static void applyFrameLengthChanges(void) {
 
    // FIXME rm
    //iprintf("%d\n", *current);
+
+   // make sure the clock is correctly set
+   ttimer_Set(&state.animationClock, true, *current);
 }
 
 static void applyJitterChanges(void) {
@@ -195,6 +202,7 @@ static void applyJitterChanges(void) {
 
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
+      iprintf("Jitter Slew Complete\n");
       *current = *target;
    }
    else {
@@ -205,10 +213,6 @@ static void applyJitterChanges(void) {
          (*current) += slew;
       }
    }
-
-   // FIXME use relative nudge?
-   // make sure the clock is correctly set
-   ttimer_Set(&state.animationClock, true, *current);
 
    //FIXME rm
    //iprintf("%d\n", *current);
