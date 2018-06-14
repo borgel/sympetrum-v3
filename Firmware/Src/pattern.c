@@ -98,10 +98,10 @@ void pattern_Init(void) {
 
    // kick the animation clock
    state.animation.frameLengthMS = getAnimationClockPeriod(&state.animation);
-   ttimer_Set(&state.animationClock, true, state.animation.frameLengthMS);
+   ttimer_Set(&state.animationClock, true, true, state.animation.frameLengthMS);
 
    // setup the main timer
-   ttimer_Set(&state.beaconClock, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
+   ttimer_Set(&state.beaconClock, true, true, BEACON_CLOCK_DEFAULT_PERIOD_MS);
 
    // safe to init IR now that animation etc is setup
    beacon_Init();
@@ -185,7 +185,7 @@ static void applyFrameLengthChanges(void) {
    //iprintf("%d\n", *current);
 
    // make sure the clock is correctly set
-   ttimer_Set(&state.animationClock, true, *current);
+   ttimer_Set(&state.animationClock, true, false, *current);
 }
 
 static void applyJitterChanges(void) {
