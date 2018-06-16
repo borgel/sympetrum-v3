@@ -116,6 +116,7 @@ void pattern_DoSendBeacon(void) {
 
    // animation briefly to show we are sending
    state.animation.maxJitter = 0;
+   //state.animation.maxJitter = MAX_JITTER - state.animation.maxJitter;
 
    //FIXME rm
    //applyRampState(IRC_Increment);
