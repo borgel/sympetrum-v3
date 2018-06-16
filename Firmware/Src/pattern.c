@@ -130,6 +130,9 @@ void pattern_Timeslice(uint32_t const timeMS) {
 
       // TODO handle if it's special (BS_Special)
 
+      //FIXME rm
+      iprintf("Bumped clock %d ms\n", BEACON_CLOCK_BUMP_PERIOD);
+
       // bump main clock forward 10%
       ttimer_Adjust(&state.beaconClock, BEACON_CLOCK_BUMP_PERIOD);
 
@@ -277,6 +280,15 @@ static void applyRampState(enum InteractionRampChoice const irc) {
       }
    }
    iprintf("%d\n", state.rampPosition);
+
+   // centered random 500ms offset
+   int littleBump = rand() % 750;
+   littleBump -= 750;
+
+   iprintf("Adding %d ms clock jitter\n", littleBump);
+
+   // shake the clock up a little to prevent sync lock
+   ttimer_Adjust(&state.beaconClock, littleBump);
 
    struct InteractionRamp const * const r = &interactionRamp[state.rampPosition];
    struct TerribleAnimation * const ta = &state.animation;
