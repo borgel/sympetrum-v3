@@ -9,7 +9,7 @@
 #include <string.h>
 
 //#define BEACON_STR_LEN     (12)    //<<########>>
-#define BEACON_STR_LEN     (2)    //<<########>>
+#define BEACON_STR_LEN     (3)    //B##
 
 //TODO use these
 static char const * const SpecialBeaconIDs[] = {
@@ -24,7 +24,7 @@ void beacon_Init(void) {
 void beacon_Send(void) {
    char beacon[BEACON_STR_LEN + 1] = {0};
    //snprintf(beacon, sizeof(beacon), "<<%08lX>>", bid_GetID());
-   snprintf(beacon, sizeof(beacon), "B%0X", bid_GetIDCrc());
+   snprintf(beacon, sizeof(beacon), "B%02X", bid_GetIDCrc());
 
    iprintf("Sending [%s]\n", beacon);
 
