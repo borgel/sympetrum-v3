@@ -47,6 +47,15 @@ enum DrawState {
    DS_DisableRow,
 };
 
+enum WriteState {
+   ws_Idle,
+   ws_Progress,
+   ws_Done,
+};
+// tracks the state of the i2c write
+static enum WriteState writeState = ws_Idle;
+static uint8_t rowWriteBuf[LED_CHANNELS + 1 + 1] = {0};
+
 struct MatrixState {
    //TODO move?
    uint8_t brightness;
@@ -72,7 +81,7 @@ struct ColorPointer {
 // for blanking.
 // 4 arrays of 36 bytes long. Physical LEDs divide into groups of 3
 //                           x              y
-static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS];
+static uint8_t matrixRaw[LED_BANKS + 1][LED_CHANNELS] = {0};
 // this is the mapping layer used to access the matrix logically
 static struct ColorPointer matrixMapped[MATRIX_ROWS + 1][MATRIX_COLS];
 // mapping layer for accessing the array linearly
@@ -100,6 +109,8 @@ void led_Init(void){
 
    // start up the frame clock. After this, it will be drawing to the display
    _ConfigureFrameClock();
+
+   iprintf("LED Init Done\n");
 }
 
 void led_TestInit(void) {
@@ -113,6 +124,9 @@ void _ConfigureLEDController(void) {
    uint8_t data[63 + 10] = {};
 
    matrixState.brightness = 255;
+
+   // clear display
+   memset(matrixRaw, 0, sizeof(matrixRaw));
 
    _configureMapping();
 
@@ -137,6 +151,7 @@ void _ConfigureLEDController(void) {
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
 
    led_ClearDisplay();
+
 }
 
 void led_ClearDisplay(void) {
@@ -279,6 +294,7 @@ void led_UpdateDisplay(void) {
    switch(matrixState.stage) {
       case DS_Start:
          // any init needed
+         writeState = ws_Idle;
          matrixState.row = 0;
          matrixState.waitCounts = 0;
 
@@ -288,18 +304,28 @@ void led_UpdateDisplay(void) {
 
       case DS_BlankRow:
          // start i2c to write the blank row
-         _WriteRow(ROW_BLANKING);
+         if(writeState == ws_Idle) {
+            _WriteRow(ROW_BLANKING);
+         }
 
-         // progress SM
-         matrixState.stage = DS_DisableRow;
+         // progress SM if i2c is done sending
+         if(writeState == ws_Done) {
+            writeState = ws_Idle;
+            matrixState.stage = DS_DisableRow;
+         }
          break;
 
       case DS_WriteNewRow:
          // write new data to controller for this col while everything is off in ONE ARRAY SEND
-         _WriteRow(matrixState.row);
+         if(writeState == ws_Idle) {
+            _WriteRow(matrixState.row);
+         }
 
          // progress SM
-         matrixState.stage = DS_EnableRow;
+         if(writeState == ws_Done) {
+            writeState = ws_Idle;
+            matrixState.stage = DS_EnableRow;
+         }
          break;
 
       case DS_EnableRow:
@@ -315,9 +341,11 @@ void led_UpdateDisplay(void) {
          if(matrixState.waitCounts > COUNTS_FOR_PERSISTANCE) {
             matrixState.waitCounts = 0;
 
-            //progress SM
             //blank for one cycle
-            matrixState.stage = DS_BlankRow;
+            //matrixState.stage = DS_BlankRow;
+
+            //progress SM
+            matrixState.stage = DS_DisableRow;
          }
 
          break;
@@ -341,6 +369,11 @@ void led_UpdateDisplay(void) {
          iprintf("Matrix SM hit default state. Why?\n");
          break;
    }
+}
+
+// called by the HAL whenever an i2c transfer ends
+void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+   writeState = ws_Done;
 }
 
 // enable one bank and disable the others
@@ -371,18 +404,19 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
 
 static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
-   uint8_t config[LED_CHANNELS + 1 + 1] = {0};
 
    //set the register
-   config[0] = REG_PWM_BASE;
+   rowWriteBuf[0] = REG_PWM_BASE;
    //set the final byte to force the controller to update its outputs
-   config[LED_CHANNELS + 1] = 0x0;
+   rowWriteBuf[LED_CHANNELS + 1] = 0x0;
 
-   //FIXME better way? somehow expose a buffer to write into?
+   //TODObetter way? somehow expose a buffer to write into?
    //TODO DMA this
-   memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
+   memcpy(&rowWriteBuf[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
-   stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
+   // FIXME make IT?
+   writeState = ws_Progress;
+   stat = HAL_I2C_Master_Transmit_IT(&hi2c1, LED_CONT_ADDR, rowWriteBuf, sizeof(rowWriteBuf));
    if(stat != 0) {
       iprintf("Row Stat = 0x%x\n", stat);
       return false;

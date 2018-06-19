@@ -38,7 +38,6 @@
 #include "ir_test.h"
 #include "platform_hw.h"
 #include "iprintf.h"
-#include "led.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_hal_tim.h"
 #include "stm32f0xx_hal_gpio.h"
@@ -86,6 +85,7 @@ static volatile uint8_t irRxBuff[IR_RX_BUFF_SIZE];
 static volatile uint32_t irRxBits;
 static volatile crc_t crc;
 static bool ShouldRX = false;
+static bool rxError = false;
 
 TIM_HandleTypeDef htim3;
 static TIM_HandleTypeDef htim17;
@@ -105,7 +105,7 @@ static crc_t crc_update(crc_t crc, const void *data, size_t data_len);
 // 48MHz clock divided by 32 gives us 1.5MHz timer clock
 // With a 4096 period, timer overflows in ~2.73ms
 //
-void TIM3_Init() {
+static void TIM3_Init() {
 
    TIM_ClockConfigTypeDef sClockSourceConfig;
 
@@ -179,7 +179,7 @@ static void TIM17_Init(void)
 }
 
 // Wait until a specified number of TIM3 clock ticks elapses
-void delayTicks(uint32_t ticks) {
+static void delayTicks(uint32_t ticks) {
    uint32_t oldTicks = TIM3->ARR; // Save value to be restored later
 
    IRMode = IR_TX; // Change mode so the TIM3 isr knows what to do
@@ -204,13 +204,13 @@ void delayTicks(uint32_t ticks) {
 }
 
 // Start TIM3 to measure incoming pulse width
-void startIRPulseTimer() {
+static void startIRPulseTimer() {
    TIM3->CNT = 0;
    __HAL_TIM_CLEAR_FLAG(&htim3, TIM_SR_UIF);
    HAL_TIM_Base_Start_IT(&htim3);
 }
 
-void stopIRPulseTimer() {
+static void stopIRPulseTimer() {
    HAL_TIM_Base_Stop_IT(&htim3);
 }
 
@@ -251,6 +251,7 @@ void IRInit(void) {
    HAL_Delay(10);
 
    // always listen
+   ShouldRX = false;
    IRStartRx();
 
    isInit = true;
@@ -289,7 +290,7 @@ void ir_TestSetEnableTX(enum ir_TestTXEnable en) {
 }
 
 // Transmit start pulse
-void IRStartStop(void) {
+static void IRStartStop(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(START_TICKS);
 
@@ -298,7 +299,7 @@ void IRStartStop(void) {
 }
 
 // Transmit a zero
-void IRZero(void) {
+static void IRZero(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(MARK_TICKS);
 
@@ -307,7 +308,7 @@ void IRZero(void) {
 }
 
 // Transmit a one
-void IROne(void) {
+static void IROne(void) {
    HAL_TIM_PWM_Start(&htim17, TIM_CHANNEL_1);
    delayTicks(MARK_TICKS);
 
@@ -315,7 +316,7 @@ void IROne(void) {
    delayTicks(SPACE_ONE_TICKS);
 }
 
-void IRTxByte(uint8_t byte) {
+static void IRTxByte(uint8_t byte) {
    for (int bit = 7; bit >= 0; bit--) {
       if ((byte & (0x01 << bit)) == 0x00) {
          IRZero();
@@ -328,42 +329,26 @@ void IRTxByte(uint8_t byte) {
 void IRTxBuff(uint8_t *buff, size_t len) {
    crc = crc_init();
 
-   bool wasRXing = IRStopRX();
+   // stop listening
+   IRStopRX();
 
-   //FIXME rm
-   /*
-   iprintf("TX send start\n");
-   iprintf("buf at 0x%x is %d long: [", buff, len);
-   for (uint8_t byte = 0; byte < len; byte++) {
-      iprintf("%c", buff[byte]);
-   }
-   iprintf("]\n");
-   */
-
-   led_Pause();
-
+   // send the start state
    IRStartStop();
-
    for (uint8_t byte = 0; byte < len; byte++) {
       IRTxByte(buff[byte]);
       crc = crc_update(crc, (unsigned char *) &buff[byte], 1);
    }
 
    crc = crc_finalize(crc);
-
    IRTxByte(crc);
 
    IRStartStop();
 
-   led_Resume();
-
-   if(wasRXing) {
-      IRStartRx();
-   }
+   IRStartRx();
 }
 
 // Shift bits into rx buffer
-void IRRxBit(uint8_t newBit) {
+static void IRRxBit(uint8_t newBit) {
    uint32_t byte = irRxBits >> 3;
    uint32_t bit = irRxBits & 0x07;
 
@@ -388,9 +373,11 @@ void IRRxBit(uint8_t newBit) {
 }
 
 int32_t IRBytesAvailable() {
+   // convert bits to bytes
    int32_t bytes = (irRxBits >> 3);
 
-   if ((IRState == IR_RX_DONE) && (bytes > 0)) {
+   // only count bytes as avail if we are done receiving
+   if ((IRState == IR_RX_DONE) && (bytes - 1 > 0)) {
       // Don't count CRC byte!
       return bytes - 1;
    } else {
@@ -408,6 +395,7 @@ static void IRStartRx() {
       __HAL_GPIO_EXTI_CLEAR_IT(EXTI2_3_IRQn);
       HAL_NVIC_EnableIRQ(EXTI2_3_IRQn);
       ShouldRX = true;
+      rxError = false;
    }
 }
 
@@ -452,6 +440,12 @@ int32_t IRGetState() {
 
 // Return true if a packet has been received
 bool IRDataReady() {
+   if(rxError) {
+      iprintf("RX error detected, resetting\n");
+      IRStopRX();
+      IRStartRx();
+   }
+
    if (IRState == IR_RX_DONE) {
       return true;
    } else {
@@ -463,15 +457,17 @@ bool IRDataReady() {
 // to get this message's data
 uint8_t *IRGetBuff(uint32_t * len) {
    *len = IRBytesAvailable();
+   uint8_t * o = (uint8_t *) irRxBuff;
 
+   iprintf("Got buf, resetting\n");
    IRStopRX();
    IRStartRx();
 
-   return (uint8_t *) irRxBuff;
+   return o;
 }
 
 // Receive GPIO state machine
-void IRStateMachine() {
+static void IRStateMachine() {
    uint32_t count = TIM3->CNT; // Save timer value as soon as possible
    uint32_t pinState = HAL_GPIO_ReadPin(IR_RX_Port, IR_RX_Pin);
 
@@ -533,7 +529,6 @@ void IRStateMachine() {
                IRState = IR_RX_ERR_CRC;
             }
 
-            HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
             ShouldRX = false;
          } else if (count > MARK_TICKS) {
             startIRPulseTimer(); // Start timing space
@@ -562,17 +557,28 @@ void IRStateMachine() {
       }
 
       case IR_RX_DONE:
-        // check CRC if there is one?
         break;
 
       default:
          break;
    }
 
-   // Disable interrupts if an error occurred (until user resets it)
+   // if there was an RX error, reset and begin waiting again
    if (IRState < 0) {
+      //FIXME rm
+      iprintf("X");
+
+      stopIRPulseTimer();
+
+      irRxBits = 0;
+      IRState = IR_RX_IDLE;
+      ShouldRX = true;
+
+      rxError = true;
+   }
+   // this occurs when a message finishes
+   else if(IRState == IR_RX_DONE && !ShouldRX) {
       HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
-      ShouldRX = false;
    }
 }
 

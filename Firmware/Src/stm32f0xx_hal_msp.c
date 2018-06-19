@@ -104,7 +104,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
       /* Peripheral clock enable */
       __HAL_RCC_I2C1_CLK_ENABLE();
       /* Peripheral interrupt init */
-      HAL_NVIC_SetPriority(I2C1_IRQn, 3, 0);
+      HAL_NVIC_SetPriority(I2C1_IRQn, 2, 0);
       HAL_NVIC_EnableIRQ(I2C1_IRQn);
       /* USER CODE BEGIN I2C1_MspInit 1 */
 
@@ -160,7 +160,7 @@ void HAL_TIM_Base_MspInit(TIM_HandleTypeDef* htim_base)
 
       /* Peripheral interrupt init */
       //TODO change priority? lower? higher?
-      HAL_NVIC_SetPriority(TIM14_IRQn, 1, 0);
+      HAL_NVIC_SetPriority(TIM14_IRQn, 3, 0);
       HAL_NVIC_EnableIRQ(TIM14_IRQn);
    }
    //Bring up IR Encode Envelope peripherals

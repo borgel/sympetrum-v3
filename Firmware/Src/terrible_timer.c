@@ -10,16 +10,19 @@
 void ttimer_Reset(struct TerribleTimer* t) {
    t->durationMS = 0;
    t->startMS = 0;
-   t->pendingComplete = true;
+   t->pendingComplete = false;
    t->repeat= false;
 }
 
-void ttimer_Set(struct TerribleTimer* t, bool restartWhenDone, uint32_t const durationMS) {
+void ttimer_Set(struct TerribleTimer* t, bool restartWhenDone, bool restartNow, uint32_t const durationMS) {
    t->repeat = restartWhenDone;
    t->durationMS = durationMS;
-   ttimer_Restart(t);
+   if(restartNow) {
+      ttimer_Restart(t);
+   }
 }
 
+// adjusts the current time (passing 10ms makes the clock jump 10ms into the future_
 void ttimer_Adjust(struct TerribleTimer* const t, int32_t adjustment) {
    // adjust the timer by adjusting it's start point
    t->startMS += adjustment;

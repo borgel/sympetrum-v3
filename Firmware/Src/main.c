@@ -26,21 +26,6 @@ static uint32_t lastUserButton = 0;
 static bool TestMode = false;
 static bool TestModeLED = false;
 
-static void testDarknetIR(void) {
-   iprintf("Darknet TX\n");
-
-   /*
-   uint8_t b = 0x00;
-   IRTxBuff(&b, 1);
-   */
-
-   uint8_t buf[] = "Test Str";
-   iprintf("TX...");
-   IRTxBuff(buf, sizeof(buf) - 1);
-   iprintf("done\n");
-   iprintf("have %d bytes\n", IRBytesAvailable());
-}
-
 int main(void)
 {
    HAL_Init();
@@ -48,6 +33,9 @@ int main(void)
    platformHW_Init();
 
    iprintf("\r\nStarting... (v%d | #0x%x / 0x%x | Built "__DATE__":"__TIME__")\r\n", FW_VERSION, bid_GetID(), bid_GetIDCrc());
+
+   // seed the PRNG from the kinda unique board ID
+   srand(bid_GetID());
 
    // if we should enter test mode, do that
    if(test_EnterTestMode()) {
