@@ -42,7 +42,7 @@ int main(void)
       TestMode = true;
 
       // this should never return
-      //test_DoTests();
+      test_DoTests();
    }
    TestMode = false;
 
