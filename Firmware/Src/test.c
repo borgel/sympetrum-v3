@@ -62,16 +62,11 @@ static bool _GetTestpoint(enum TestPoints tp);
 
 // check if we should enter test mode
 bool test_EnterTestMode(void) {
-   const bool b8 = _GetTestpoint(TP_B8);
-   const bool a15 = _GetTestpoint(TP_A15);
-
-   //FIXME rm, short on for now
-   return true;
-
-
+   // if user button pressed, enter test mode
+   const bool b = HAL_GPIO_ReadPin(USER_BUTTON_PORT, USER_BUTTON_PIN) == GPIO_PIN_RESET;
 
    // strap b8 high and a15 low
-   if(b8 && a15) {
+   if(b) {
       return true;
    }
    return false;
