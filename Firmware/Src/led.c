@@ -47,6 +47,15 @@ enum DrawState {
    DS_DisableRow,
 };
 
+enum WriteState {
+   ws_Idle,
+   ws_Progress,
+   ws_Done,
+};
+// tracks the state of the i2c write
+static enum WriteState writeState = ws_Idle;
+static uint8_t rowWriteBuf[LED_CHANNELS + 1 + 1] = {0};
+
 struct MatrixState {
    //TODO move?
    uint8_t brightness;
@@ -281,16 +290,7 @@ void led_ForceRefresh(void) {
  * be flicker. Calling it from a 1kHz timer ISR seems to work well (yes, it's all run
  * in ISR context, even the i2c).
  */
-//FIXME rm
-enum WriteState {
-   ws_Idle,
-   ws_Progress,
-   ws_Done,
-};
-static enum WriteState writeState = ws_Idle;
 void led_UpdateDisplay(void) {
-   //FIXME rm
-   //iprintf("U");
    switch(matrixState.stage) {
       case DS_Start:
          // any init needed
@@ -304,15 +304,12 @@ void led_UpdateDisplay(void) {
 
       case DS_BlankRow:
          // start i2c to write the blank row
-         //FIXME mv
          if(writeState == ws_Idle) {
             _WriteRow(ROW_BLANKING);
          }
 
          // progress SM if i2c is done sending
-         //FIXME better way?
          if(writeState == ws_Done) {
-         //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
             writeState = ws_Idle;
             matrixState.stage = DS_DisableRow;
          }
@@ -320,25 +317,12 @@ void led_UpdateDisplay(void) {
 
       case DS_WriteNewRow:
          // write new data to controller for this col while everything is off in ONE ARRAY SEND
-         //FIXME mv
          if(writeState == ws_Idle) {
-            //FIXME rm
-            //iprintf("S");
             _WriteRow(matrixState.row);
          }
 
-         //FIXME rm
-         //iprintf(".");
-
          // progress SM
-         //FIXME better way?
          if(writeState == ws_Done) {
-         //if(HAL_I2C_GetState(&hi2c1) == HAL_I2C_STATE_READY) {
-            //FIXME rm
-            //iprintf("0x%x ", HAL_I2C_GetState(&hi2c1));
-
-            //iprintf("E");
-
             writeState = ws_Idle;
             matrixState.stage = DS_EnableRow;
          }
@@ -357,13 +341,10 @@ void led_UpdateDisplay(void) {
          if(matrixState.waitCounts > COUNTS_FOR_PERSISTANCE) {
             matrixState.waitCounts = 0;
 
-            //FIXME rm
-            //while(1);
+            //blank for one cycle
+            //matrixState.stage = DS_BlankRow;
 
             //progress SM
-            //blank for one cycle
-            matrixState.stage = DS_BlankRow;
-            //FIXME rm
             matrixState.stage = DS_DisableRow;
          }
 
@@ -392,8 +373,6 @@ void led_UpdateDisplay(void) {
 
 // called by the HAL whenever an i2c transfer ends
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
-   //FIXME rm
-   //iprintf("I");
    writeState = ws_Done;
 }
 
@@ -423,25 +402,21 @@ void led_TestDrawPixel(uint8_t x, uint8_t y, struct color_ColorRGB * color) {
    *matrixMapped[x][y].b = color->b;
 }
 
-// FIXME mr
-static uint8_t config[LED_CHANNELS + 1 + 1] = {0};
 static bool _WriteRow(int rowIndex) {
    HAL_StatusTypeDef stat;
-   //uint8_t config[LED_CHANNELS + 1 + 1] = {0};
 
    //set the register
-   config[0] = REG_PWM_BASE;
+   rowWriteBuf[0] = REG_PWM_BASE;
    //set the final byte to force the controller to update its outputs
-   config[LED_CHANNELS + 1] = 0x0;
+   rowWriteBuf[LED_CHANNELS + 1] = 0x0;
 
-   //FIXME better way? somehow expose a buffer to write into?
+   //TODObetter way? somehow expose a buffer to write into?
    //TODO DMA this
-   memcpy(&config[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
+   memcpy(&rowWriteBuf[1], &matrixRaw[rowIndex][0], LED_CHANNELS);
 
    // FIXME make IT?
-   //stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, config, sizeof(config), 100);
    writeState = ws_Progress;
-   stat = HAL_I2C_Master_Transmit_IT(&hi2c1, LED_CONT_ADDR, config, sizeof(config));
+   stat = HAL_I2C_Master_Transmit_IT(&hi2c1, LED_CONT_ADDR, rowWriteBuf, sizeof(rowWriteBuf));
    if(stat != 0) {
       iprintf("Row Stat = 0x%x\n", stat);
       return false;

@@ -440,7 +440,6 @@ int32_t IRGetState() {
 
 // Return true if a packet has been received
 bool IRDataReady() {
-   //FIXME rm
    if(rxError) {
       iprintf("RX error detected, resetting\n");
       IRStopRX();
@@ -563,14 +562,6 @@ static void IRStateMachine() {
       default:
          break;
    }
-
-   /*
-   // Disable interrupts if an error occurred (until user resets it)
-   if (IRState < 0) {
-      HAL_NVIC_DisableIRQ(EXTI2_3_IRQn);
-      ShouldRX = false;
-   }
-   */
 
    // if there was an RX error, reset and begin waiting again
    if (IRState < 0) {

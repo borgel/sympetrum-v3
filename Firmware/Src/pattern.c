@@ -116,10 +116,6 @@ void pattern_DoSendBeacon(void) {
 
    // animation briefly to show we are sending
    state.animation.maxJitter = 0;
-   //state.animation.maxJitter = MAX_JITTER - state.animation.maxJitter;
-
-   //FIXME rm
-   //applyRampState(IRC_Increment);
 }
 
 void pattern_Timeslice(uint32_t const timeMS) {
@@ -130,7 +126,6 @@ void pattern_Timeslice(uint32_t const timeMS) {
 
       // TODO handle if it's special (BS_Special)
 
-      //FIXME rm
       iprintf("Bumped clock %d ms\n", BEACON_CLOCK_BUMP_PERIOD);
 
       // bump main clock forward 10%
@@ -169,9 +164,6 @@ static void applyFrameLengthChanges(void) {
       return;
    }
 
-   // FIXME rm
-   //iprintf("FL want %d. Change from %d -> ", *target, *current);
-
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
       iprintf("Frame Length Slew Complete\n");
@@ -186,9 +178,6 @@ static void applyFrameLengthChanges(void) {
       }
    }
 
-   // FIXME rm
-   //iprintf("%d\n", *current);
-
    // make sure the clock is correctly set
    ttimer_Set(&state.animationClock, true, false, *current);
 }
@@ -201,9 +190,6 @@ static void applyJitterChanges(void) {
    if(*current == *target) {
       return;
    }
-
-   //FIXME rm
-   //iprintf("jitter want %d. Changing from %d to ", *target, *current);
 
    // if we are close, snap to the right value to avoid hunting forever
    if(abs(*current - *target) <= slew) {
@@ -218,9 +204,6 @@ static void applyJitterChanges(void) {
          (*current) += slew;
       }
    }
-
-   //FIXME rm
-   //iprintf("%d\n", *current);
 }
 
 static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_t phase, uint8_t maxJitter) {
@@ -239,9 +222,6 @@ static void applyAnimationFrame(uint8_t const frame, uint32_t durationMS, uint8_
 }
 
 static void handleAnimationFrame(struct TerribleAnimation * const a) {
-   //FIXME rm
-   //iprintf("F%d ", a->frame);
-
    applyAnimationFrame(a->frame, a->frameLengthMS, a->huePhase, a->maxJitter);
 
    a->huePhase++;
@@ -252,7 +232,6 @@ static void handleAnimationFrame(struct TerribleAnimation * const a) {
    // cleanup state
    a->frame++;
    if(a->frame > ANIMATION_FRAMES) {
-      //FIXME rm
       iprintf("A ");
       a->frame = 0;
    }
