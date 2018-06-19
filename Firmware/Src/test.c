@@ -56,6 +56,7 @@ struct TestPlanItem {
 
 static bool TestModeActive = false;
 
+static void _ShowColorOnBank(struct color_ColorRGB * c, int bank);
 static void _SetTestStatusLEDs(enum TestStatusLED stat);
 static void _SetTestpoint(enum TestPoints tp, bool set);
 static bool _GetTestpoint(enum TestPoints tp);
@@ -156,8 +157,17 @@ static bool _TestIRTXRX(void * param) {
 
    // FIXME what should threshold be?
    if(timesStatesWereExpected >= IR_TESTS_TO_PASS) {
+      // show success
+      struct color_ColorRGB g = {.g = 255};
+      _ShowColorOnBank(&g, 0);
+
       return true;
    }
+
+   // show fail
+   struct color_ColorRGB r = {.r = 255};
+   _ShowColorOnBank(&r, 0);
+
    return false;
 }
 
