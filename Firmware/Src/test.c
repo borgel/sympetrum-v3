@@ -258,6 +258,11 @@ static struct TestPlanItem const TestPlan[] = {
    { _TestIRTXRX, false, NULL},
 
    // for LEDs, pass in the bank
+   { _TestLED_B, false, (void*)0},
+   { _TestLED_B, false, (void*)1},
+   { _TestLED_B, false, (void*)2},
+   { _TestLED_B, false, (void*)3},
+
    { _TestLED_R, false, (void*)0},
    { _TestLED_R, false, (void*)1},
    { _TestLED_R, false, (void*)2},
@@ -267,11 +272,6 @@ static struct TestPlanItem const TestPlan[] = {
    { _TestLED_G, false, (void*)1},
    { _TestLED_G, false, (void*)2},
    { _TestLED_G, false, (void*)3},
-
-   { _TestLED_B, false, (void*)0},
-   { _TestLED_B, false, (void*)1},
-   { _TestLED_B, false, (void*)2},
-   { _TestLED_B, false, (void*)3},
 };
 static int currentItem = 0;
 
