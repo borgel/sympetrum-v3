@@ -1,10 +1,4 @@
-/**
- */
 #include "platform_hw.h"
-#include "stm32f0xx_hal.h"
-#include "stm32f0xx_hal_gpio.h"
-#include "stm32f0xx_hal_i2c.h"
-#include "stm32f0xx_hal_tim.h"
 #include "iprintf.h"
 
 #include "pattern.h"
@@ -17,7 +11,6 @@
 // pull in the interpolator just for showing version on boot
 #include "yabi/yabi.h"
 
-#include <string.h>
 #include <stdlib.h>
 
 #define VERSION_FADE_SPEED_MS 500
