@@ -159,14 +159,14 @@ static bool _TestIRTXRX(void * param) {
    if(timesStatesWereExpected >= IR_TESTS_TO_PASS) {
       // show success
       struct color_ColorRGB g = {.g = 255};
-      _ShowColorOnBank(&g, 0);
+      _ShowColorOnBank(&g, 2);
 
       return true;
    }
 
    // show fail
    struct color_ColorRGB r = {.r = 255};
-   _ShowColorOnBank(&r, 0);
+   _ShowColorOnBank(&r, 2);
 
    return false;
 }
@@ -258,6 +258,11 @@ static struct TestPlanItem const TestPlan[] = {
    { _TestIRTXRX, false, NULL},
 
    // for LEDs, pass in the bank
+   { _TestLED_B, false, (void*)0},
+   { _TestLED_B, false, (void*)1},
+   { _TestLED_B, false, (void*)2},
+   { _TestLED_B, false, (void*)3},
+
    { _TestLED_R, false, (void*)0},
    { _TestLED_R, false, (void*)1},
    { _TestLED_R, false, (void*)2},
@@ -267,11 +272,6 @@ static struct TestPlanItem const TestPlan[] = {
    { _TestLED_G, false, (void*)1},
    { _TestLED_G, false, (void*)2},
    { _TestLED_G, false, (void*)3},
-
-   { _TestLED_B, false, (void*)0},
-   { _TestLED_B, false, (void*)1},
-   { _TestLED_B, false, (void*)2},
-   { _TestLED_B, false, (void*)3},
 };
 static int currentItem = 0;
 
