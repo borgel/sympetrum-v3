@@ -159,14 +159,14 @@ static bool _TestIRTXRX(void * param) {
    if(timesStatesWereExpected >= IR_TESTS_TO_PASS) {
       // show success
       struct color_ColorRGB g = {.g = 255};
-      _ShowColorOnBank(&g, 0);
+      _ShowColorOnBank(&g, 2);
 
       return true;
    }
 
    // show fail
    struct color_ColorRGB r = {.r = 255};
-   _ShowColorOnBank(&r, 0);
+   _ShowColorOnBank(&r, 2);
 
    return false;
 }
