@@ -25,6 +25,8 @@ extern uint8_t const CosTableSize;
 struct InteractionRamp {
    // divisor to the beacon clock to apply. larger numbers animate faster
    uint8_t     clockDivisor;
+   // multiplies frame duration by this to slow things down
+   uint8_t     frameMultiplier;
    // max allowed jitter. 255 will look random
    uint8_t     maxJitter;
    // max rate that jitter should change to reach the target
@@ -34,12 +36,12 @@ struct InteractionRamp {
 static const struct InteractionRamp const interactionRamp[] = {
    // divisor, maxJtter
    // starting activity level
-   {1,   MAX_JITTER/2,  20},
+   {1,  2, MAX_JITTER/2,  20},
    // one other device recently seen
-   {3,  30,             8},
+   {3,  1, 30,             8},
    // many devices seen
-   {12,  0,             2},
-   {12,  0,             2},
+   {12, 1,  0,             2},
+   {12, 1,  0,             2},
    // there are two final levels so that we can go "above" fully synced. Otherwise we tend to
    // "bounce" against the top of the ramp and end up one slot short
 };
@@ -97,7 +99,7 @@ void pattern_Init(void) {
    applyRampState(IRC_Decrement);
 
    // kick the animation clock
-   state.animation.frameLengthMS = getAnimationClockPeriod(&state.animation);
+   state.animation.frameLengthMS = interactionRamp[0].frameMultiplier * getAnimationClockPeriod(&state.animation);
    ttimer_Set(&state.animationClock, true, true, state.animation.frameLengthMS);
 
    // setup the main timer
@@ -279,7 +281,7 @@ static void applyRampState(enum InteractionRampChoice const irc) {
    // update duration
    ta->clockDivisor = r->clockDivisor;
 
-   state.frameLengthTarget = getAnimationClockPeriod(ta);
+   state.frameLengthTarget = r->frameMultiplier * getAnimationClockPeriod(ta);
 
    iprintf("Anim frame len will be %d ms / %d = %d ms\n", BEACON_CLOCK_DEFAULT_PERIOD_MS, ta->clockDivisor, state.frameLengthTarget);
 }
