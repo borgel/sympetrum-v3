@@ -334,6 +334,9 @@ void test_DoTests(void) {
 
             iprintf("Completed %d test plan iterations\n", completedTestplanIterations);
          }
+
+         HAL_Delay(1500);
+         lastTestWasPassthrough = true;
       }
 
       //TODO on one complete cycle, terminate?
