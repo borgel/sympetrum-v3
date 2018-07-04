@@ -91,7 +91,7 @@ static struct ColorPointer matrixLinear[TOTAL_LOGICAL_LEDS];
 static uint16_t const MatrixPinLUT[]         = {GPIO_PIN_8, GPIO_PIN_3, GPIO_PIN_4, GPIO_PIN_5};
 static GPIO_TypeDef * const MatrixPortLUT[]  = {GPIOA, GPIOB, GPIOB, GPIOB};
 
-static void _ConfigureLEDController(void);
+static bool _ConfigureLEDController(void);
 static void _ConfigureFrameClock(void);
 static bool _EnableChannel(uint8_t chan, enum led_Divisor div);
 static bool _ForceUpdateRow(void);
@@ -105,7 +105,13 @@ static void led_DrawRing(uint8_t r, struct color_ColorHSV * const color);
 void led_Init(void){
    // most HW init in platform_hw and hal_msp
 
-   _ConfigureLEDController();
+   // spin until LED init succeeds
+   if(!_ConfigureLEDController()) {
+      // this is aggressive, but if we fail to init the LED controller the easiest
+      // fix seems to be to reset everthing (which is what the user would do anyway);
+      HAL_Delay(500);
+      HAL_NVIC_SystemReset();
+   }
 
    // start up the frame clock. After this, it will be drawing to the display
    _ConfigureFrameClock();
@@ -119,9 +125,11 @@ void led_TestInit(void) {
    // don't turn on the frame clock
 }
 
-void _ConfigureLEDController(void) {
+bool _ConfigureLEDController(void) {
    HAL_StatusTypeDef stat;
    uint8_t data[63 + 10] = {};
+
+   iprintf("Attempting an LED init...\n");
 
    matrixState.brightness = 255;
 
@@ -135,12 +143,15 @@ void _ConfigureLEDController(void) {
    data[1] = 0x1;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
    if(stat != 0) {
-      iprintf("Stat = 0x%x\n", stat);
+      iprintf("Disable shutdown failed. Stat = 0x%x\n", stat);
+      return false;
    }
 
    // set enable bit and scalar on all channels
    for(int i = 0; i < LED_CHANNELS; i++) {
-      _EnableChannel(i, DIVISOR_4);
+      if(!_EnableChannel(i, DIVISOR_4)) {
+         return false;
+      }
    }
 
    _ForceUpdateRow();
@@ -149,9 +160,14 @@ void _ConfigureLEDController(void) {
    data[0] = REG_GLOBAL_CONTROL;
    data[1] = 0x0;
    stat = HAL_I2C_Master_Transmit(&hi2c1, LED_CONT_ADDR, data, 2, 1000);
+   if(stat != 0) {
+      iprintf("Enable all channels failed. Stat = 0x%x\n", stat);
+      return false;
+   }
 
    led_ClearDisplay();
 
+   return true;
 }
 
 void led_ClearDisplay(void) {
