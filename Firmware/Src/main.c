@@ -78,7 +78,7 @@ static void VersionToLEDs(void) {
    struct color_ColorHSV c;
 
    uint8_t const colorSet = rand();
-   uint8_t const colorCleared = rand();
+   uint8_t const colorCleared = colorSet + 127;
 
    iprintf("Displaying version on LEDs...");
 
