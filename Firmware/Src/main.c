@@ -22,7 +22,7 @@ static uint32_t lastUserButton = 0;
 static bool TestMode = false;
 static bool TestModeLED = false;
 
-static void VersionToLEDs(void);
+static void VersionToLEDs(bool invert);
 
 int main(void)
 {
@@ -47,7 +47,8 @@ int main(void)
    lighting_Init();
 
    // show version on LEDs before real animations take over
-   VersionToLEDs();
+   VersionToLEDs(false);
+   VersionToLEDs(true);
 
    pattern_Init();
 
@@ -74,11 +75,19 @@ int main(void)
 /*
  * Write this unit's SW version to the LEDs once.
  */
-static void VersionToLEDs(void) {
+static void VersionToLEDs(bool invert) {
    struct color_ColorHSV c;
 
-   uint8_t const colorSet = rand();
-   uint8_t const colorCleared = colorSet + 127;
+   uint8_t colorSet = rand();
+   uint8_t colorCleared = colorSet + 127;
+   if(invert) {
+      uint8_t e = colorCleared;
+      colorCleared = colorSet;
+      colorSet = e;
+
+      colorCleared++;
+      colorSet++;
+   }
 
    iprintf("Displaying version on LEDs...");
 
