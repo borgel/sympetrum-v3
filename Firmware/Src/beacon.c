@@ -36,6 +36,8 @@ enum BeaconStatus beacon_HaveReceived(void) {
    if(IRDataReady()) {
       iprintf("Incoming IR Message ");
 
+      return BS_Received;
+
       uint32_t bytes = 0;
       uint8_t* buf = IRGetBuff(&bytes);
 
