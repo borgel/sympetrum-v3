@@ -1,0 +1,57 @@
+### Module positions - created on Sunday, May 06, 2018 'PMt' 04:34:16 PM ###
+### Printed by Pcbnew version pcbnew 4.0.6
+## Unit = inches, Angle = deg.
+## Side : top
+# Ref     Val                     Package                                PosX       PosY       Rot  Side
+D102      IR25-21C/TR8            LED_1206_SmallSilk                   5.7945    -3.8740  180.0000  top
+D103      IR25-21C/TR8            LED_1206_SmallSilk                   6.0165    -3.8740  180.0000  top
+D301      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7874    -4.9606   90.0000  top
+D302      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.7421    -3.5728    0.0000  top
+D303      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7874    -4.5669   90.0000  top
+D304      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.6634    -3.7500  335.0000  top
+D305      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.2933    -3.8681  180.0000  top
+D306      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.4272    -3.6122  180.0000  top
+D307      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.0571    -3.8090    0.0000  top
+D308      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7480    -4.0945  120.0000  top
+D309      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.0965    -3.5334  180.0000  top
+D310      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7874    -5.3543   90.0000  top
+D311      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.4508    -3.6515    0.0000  top
+D312      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7087    -3.5039  180.0000  top
+D401      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.0571    -3.1988    0.0000  top
+D402      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.9035    -2.9626  180.0000  top
+D403      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.2736    -2.9626  315.0000  top
+D404      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7480    -2.7165    0.0000  top
+D405      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.5276    -2.8740  180.0000  top
+D406      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.5512    -2.5984  120.0000  top
+D407      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.7087    -2.9134    0.0000  top
+D408      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.6477    -3.1595    0.0000  top
+D409      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     4.6752    -3.0925   90.0000  top
+D410      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.9055    -3.2578  180.0000  top
+D411      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.3366    -3.4153   90.0000  top
+D412      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.3721    -3.1201    0.0000  top
+D501      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.1476    -3.7500   25.0000  top
+D502      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.0630    -4.0945  240.0000  top
+D503      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.7539    -3.8090    0.0000  top
+D504      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     5.9154    -5.7283  240.0000  top
+D505      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.3799    -3.6122  180.0000  top
+D506      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.0236    -4.3701  270.0000  top
+D507      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.1024    -3.5039  180.0000  top
+D508      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.0689    -3.5728  180.0000  top
+D509      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.0236    -4.7638  270.0000  top
+D510      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.3602    -3.6515  180.0000  top
+D511      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.5177    -3.8681    0.0000  top
+D512      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.0236    -5.1575  270.0000  top
+D601      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.0630    -2.7165    0.0000  top
+D602      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.2992    -2.5984   60.0000  top
+D603      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.1359    -3.0886  270.0000  top
+D604      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.4351    -3.1201    0.0000  top
+D605      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.1595    -3.1595    0.0000  top
+D606      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.4744    -3.4153    0.0000  top
+D607      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.2835    -2.8740    0.0000  top
+D608      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     7.5413    -2.9626  225.0000  top
+D609      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.1024    -2.9134    0.0000  top
+D610      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.7107    -3.5334    0.0000  top
+D611      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.9075    -2.9626    0.0000  top
+D612      SX-3528-RGB-ANODE       SX-3528-RGB-REORDERED-HiddenSilk     6.7500    -3.1988    0.0000  top
+Q101      ALS-PT19-315C/L177/TR8  LED_0603_SmallSilk                   5.9055    -4.2520  270.0000  top
+## End

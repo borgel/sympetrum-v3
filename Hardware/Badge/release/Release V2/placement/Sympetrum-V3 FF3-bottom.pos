@@ -1,0 +1,49 @@
+### Module positions - created on Sunday, May 06, 2018 'PMt' 04:34:16 PM ###
+### Printed by Pcbnew version pcbnew 4.0.6
+## Unit = inches, Angle = deg.
+## Side : bottom
+# Ref     Val                  Package                              PosX       PosY       Rot  Side
+C101      100nF                C_0805_HandSoldering               6.1660    -3.9521   45.0000  bottom
+C102      100nF                C_0805_HandSoldering               5.7874    -5.5906  135.0000  bottom
+C103      100nF                C_0805_HandSoldering               6.1069    -3.8931   45.0000  bottom
+C104      4.7uF                C_0805_HandSoldering               5.7402    -3.9114   90.0000  bottom
+C105      1uF                  C_0805_HandSoldering               5.7480    -4.3740  270.0000  bottom
+C106      10nF                 C_0805_HandSoldering               5.8268    -4.3740  270.0000  bottom
+C201      1uF                  C_0805_HandSoldering               5.8622    -3.2165  270.0000  bottom
+C202      0.1uF                C_0805_HandSoldering               5.8563    -3.7795  180.0000  bottom
+C203      22uF                 C_0805_HandSoldering               4.8425    -3.7795  180.0000  bottom
+C204      22uF                 C_0805_HandSoldering               4.9213    -2.9528  180.0000  bottom
+C205      22uF                 C_0805_HandSoldering               6.5689    -3.7185    0.0000  bottom
+C206      22uF                 C_0805_HandSoldering               6.1069    -2.5439  135.0000  bottom
+C701      4.7uF                C_0805_HandSoldering               6.7913    -3.0512  120.0000  bottom
+C702      4.7uF                C_0805_HandSoldering               6.8386    -2.9646  300.0000  bottom
+D101      USR_LED-DNP          LED_0603_SmallSilk                 5.8780    -5.7953  135.0000  bottom
+L701      4.7uH                Inductor_Taiyo-Yuden_MD-3030       6.6535    -3.2466  210.0000  bottom
+Q102      DMP3099L-7           SOT-23                             5.2362    -3.8583    0.0000  bottom
+Q301      DMP3099L-7           SOT-23                             4.8819    -3.6220  180.0000  bottom
+Q401      DMP3099L-7           SOT-23                             4.7244    -3.0709  180.0000  bottom
+Q501      DMP3099L-7           SOT-23                             6.7323    -3.5433    0.0000  bottom
+Q601      DMP3099L-7           SOT-23                             6.2598    -2.6378   45.0000  bottom
+R101      4.7k                 R_0805_HandSoldering               5.9882    -5.0413  180.0000  bottom
+R102      3k                   R_0805_HandSoldering               5.9469    -4.4626  270.0000  bottom
+R103      4.7k                 R_0805_HandSoldering               5.9882    -4.9232  180.0000  bottom
+R104      0R-DNP               R_0805_HandSoldering               5.9782    -5.6557  225.0000  bottom
+R105      47R                  R_0805_HandSoldering               6.3386    -3.8189  270.0000  bottom
+R106      10k                  R_0805_HandSoldering               5.0394    -3.8189  270.0000  bottom
+R201      5.6k                 R_0805_HandSoldering               5.5709    -3.8189  180.0000  bottom
+R202      0R                   R_1206_HandSoldering               5.1181    -3.6614  180.0000  bottom
+R203      0R                   R_1206_HandSoldering               4.9606    -3.1496  180.0000  bottom
+R204      0R                   R_1206_HandSoldering               6.4961    -3.5039    0.0000  bottom
+R205      0R                   R_1206_HandSoldering               6.0630    -2.7559   45.0000  bottom
+R301      10k                  R_0805_HandSoldering               5.0531    -3.5433  180.0000  bottom
+R401      10k                  R_0805_HandSoldering               4.8957    -3.0315  180.0000  bottom
+R501      10k                  R_0805_HandSoldering               6.5709    -3.6280    0.0000  bottom
+R601      10k                  R_0805_HandSoldering               6.1614    -2.7953   45.0000  bottom
+R703      1.02M                R_0805_HandSoldering               7.1520    -3.1267  110.0000  bottom
+R704      1.02M                R_0805_HandSoldering               6.9752    -2.9331   30.0000  bottom
+R705      536K                 R_0805_HandSoldering               7.1457    -2.8346   30.0000  bottom
+SW701     JS102011SAQN         CK-JS102011SAQN_sm-spdt-switch     7.3740    -3.5787  356.0000  bottom
+U101      STM32F051K8U6        QFN-32-1EP_5x5mm_Pitch0.5mm        5.9055    -4.1181  180.0000  bottom
+U102      CAT24C512WI-GT3-DNP  SOIC-8_3.9x4.9mm_Pitch1.27mm       5.9055    -4.6850    0.0000  bottom
+U701      AAT1217-1.2          SOT-23-6_Handsoldering             6.5650    -3.0932   30.0000  bottom
+## End
